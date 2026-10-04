@@ -310,14 +310,14 @@ window.SITE_CONFIG = {
     description: "함께 연구하는 대학원생들입니다.",
     stages: ["계획서", "연구윤리(IRB) 승인", "예비심사", "본심사", "인준"],
     students: [
-      { name: "박채림", status: "재학", program: "박사과정", major: "미디어", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "", photo: "", keywords: [], works: [] },
-      { name: "김지연", status: "재학", program: "박사과정", major: "미디어", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "", photo: "", keywords: [], works: [] },
-      { name: "조민경", status: "재학", program: "박사과정", major: "과학기술학", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "", photo: "", keywords: [], works: [] },
-      { name: "신명철", status: "재학", program: "박사과정", major: "과학기술학", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "", photo: "", keywords: [], works: [] },
-      { name: "전용준", status: "재학", program: "석사과정", major: "미디어", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "", photo: "", keywords: [], works: [] },
-      { name: "오지운", status: "재학", program: "석사과정", major: "미디어", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "", photo: "", keywords: [], works: [] },
-      { name: "김재민", status: "재학", program: "석사과정", major: "미디어", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "", photo: "", keywords: [], works: [] },
-      { name: "구현정", status: "재학", program: "석사과정", major: "과학기술학", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "", photo: "", keywords: [], works: [] }
+      { name: "박채림", status: "재학", program: "박사과정", major: "미디어", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "b72acedc33efce6309261f0586701cd3d0fe5b182bffca7408cb0336ab77304b", photo: "", keywords: [], works: [] },
+      { name: "김지연", status: "재학", program: "박사과정", major: "미디어", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "7ae988acf952fe9496de640c2d7b2d1f80be52b84d5e9821abc5501abba33724", photo: "", keywords: [], works: [] },
+      { name: "조민경", status: "재학", program: "박사과정", major: "과학기술학", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "4ea12d3e48ee1a6faa7279af1f6603919a3422353f63fe9752fffc2a68374814", photo: "", keywords: [], works: [] },
+      { name: "신명철", status: "재학", program: "박사과정", major: "과학기술학", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "a7c7dc5fb783cc6baed3393f4009f2071005fbeb130435708a60145fda723dda", photo: "", keywords: [], works: [] },
+      { name: "전용준", status: "재학", program: "석사과정", major: "미디어", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "0a8d1f77057c709ebb15200fee1fa30aebf25895b36139acf9ffbe1f936bfe6e", photo: "", keywords: [], works: [] },
+      { name: "오지운", status: "재학", program: "석사과정", major: "미디어", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "1dd8a320a4eecc36aa0429db997c2ed41ed9721101c1094022784d80b6d1e341", photo: "", keywords: [], works: [] },
+      { name: "김재민", status: "재학", program: "석사과정", major: "미디어", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "38d09858337c508e72ef86ad24c3ecdd27808ab4931a5e1361f9ca4b9b7908f7", photo: "", keywords: [], works: [] },
+      { name: "구현정", status: "재학", program: "석사과정", major: "과학기술학", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "328c3946fb102b9279872fc4b101a98137e998f990386da8511fd60e929b04cb", photo: "", keywords: [], works: [] }
     ]
   },
 
