@@ -42,7 +42,7 @@ window.SITE_CONFIG = {
     { id: "research",     label: "연구" },
     { id: "publications", label: "논문·저서" },
     { id: "teaching",     label: "강의" },
-    { id: "students",     label: "지도학생" },
+    { id: "students",     label: "연구실 소개" },
     { id: "contact",      label: "연락처" }
   ],
 
