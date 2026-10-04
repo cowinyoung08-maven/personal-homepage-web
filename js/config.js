@@ -416,7 +416,7 @@ window.SITE_CONFIG = {
   // sheetUrl: 기록이 쌓이는 구글 시트 주소 (관리자 화면에서 바로 열기용)
   // key: 아무 문자열 — Apps Script의 KEY와 같게 맞추면 그 값이 맞는 기록만 저장돼요. (비워도 됨)
   sheets: {
-    endpoint: "",
+    endpoint: "https://script.google.com/macros/s/AKfycbwhvdGgvKN0aErYNUbZw84rZUqpI4cCYGtOgWx-y45jXqc8ot_M80J7Uocgftt9Lo4/exec",
     sheetUrl: "",
     key: ""
   },
