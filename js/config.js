@@ -47,12 +47,12 @@ window.SITE_CONFIG = {
 
   // ── 첫 화면 ───────────────────────────────
   hero: {
-    badge: "Journalism · Political Communication",
+    badge: "Political Communication · Journalism",
     name: "민영",
     nameEn: "Young Min",
     position: "고려대학교 미디어대학 교수",
     tagline: "커뮤니케이션이 시민의 정치적 삶과\n공동체의 민주주의에 미치는 영향을 연구합니다.",
-    keywords: ["저널리즘", "정치 커뮤니케이션", "젠더 · 세대", "테크놀로지와 민주주의"],
+    keywords: ["정치 커뮤니케이션", "저널리즘","젠더 · 세대", "테크놀로지와 민주주의"],
     photo: "images/professor.jpg",
     buttons: [
       { label: "연구 살펴보기", href: "#research", style: "primary" },
