@@ -63,7 +63,6 @@
     ["#consult .section__head", "content", "입학·지도 문의", "✏️ 입학·지도 문의 편집"],
     ["#resources .section__head", "content", "자료실", "✏️ 자료실 편집"],
     ["#portal .section__head", "advisees", null, "🎓 지도학생 관리 (진행 단계 · 코드 · 보고)"],
-    ["#portal .section__head", "labcal", null, "🗓️ 랩 일정 관리"],
     ["#contact .prof__body", "content", "연락처", "✏️ 연락처 편집"],
     ["#curriculum .section__head", "content", "주차별 일정", "✏️ 주차별 일정 편집"],
     ["#schedule", "calendar", null, "📅 일정 추가 · 수정 · 삭제"],
@@ -237,7 +236,7 @@
   const FEAT = C.features || {};
   const TABS = [
     ["info", "⚙️", "사이트 정보"], ["content", "🧩", "섹션 내용"],
-    ["advisees", "🎓", "지도학생 관리"], ["labcal", "🗓️", "랩 일정"], ["consults", "🌿", "면담 신청"],
+    ["advisees", "🎓", "지도학생 관리"], ["consults", "🌿", "면담 신청"],
     ["notices", "📢", "공지"], ["sheets", "📊", "구글 시트 연결"], ["file", "💾", "설정 파일"],
     // ↓ 강의 사이트에서 가져온 탭 (해당 기능을 켰을 때만 보임)
     ["calendar", "📅", "수업 일정", "curriculum"], ["students", "👥", "수강생 명단", "join"],

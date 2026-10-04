@@ -1,6 +1,6 @@
 /* 5단계: 학생 전용 공간 (지도학생 로그인)
  * - 로그인: 이름 + 개인 코드 (config에는 코드의 암호화된 값만 저장)
- * - 학위논문 진행 단계 / 랩 미팅·면담 달력 / 주간 진행 보고 (구글 드라이브 자료 링크)
+ * - 학위논문 진행 단계 / 주간 진행 보고 (구글 드라이브 자료 링크) / 프로필 수정 요청
  * - 보고는 이 브라우저에 저장하고, 구글 시트가 연결돼 있으면 시트로도 보냄
  * main.js가 window.renderPortal(설정)을 부릅니다. */
 (function () {
@@ -73,16 +73,11 @@
     };
 
     /* ── 로그인 후 ── */
-    let month = null, selected = null;
     const drawHome = () => {
       const st = me();
       if (!st) { S.remove("advisee"); return drawLogin(); }
       const done = Math.max(0, Math.min(stages.length, Number(st.stage) || 0));
       const pct = Math.round((done / stages.length) * 100);
-      const occ = window.labOccurrences(C.labEvents, st.name);
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      const upcoming = occ.filter((o) => o.day >= today).slice(0, 5);
-      if (!month) { const base = upcoming[0] ? upcoming[0].day : today; month = new Date(base.getFullYear(), base.getMonth(), 1); selected = upcoming[0] ? upcoming[0].day : today; }
 
       root.innerHTML = `
         <div class="me portal-me">
@@ -91,7 +86,7 @@
           <button class="pill-btn" id="ptLogout">로그아웃</button>
         </div>
 
-        <div class="portal-grid">
+        <div class="portal-grid portal-grid--one">
           <section class="panel portal-card">
             <h3>🎓 학위논문 진행 단계 <small>${done} / ${stages.length} 단계 완료</small></h3>
             <div class="stage-bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
@@ -107,57 +102,12 @@
             </ol>
             ${done >= stages.length ? `<p class="stage-done">🎉 모든 단계를 마쳤어요. 수고 많았어요!</p>` : ""}
           </section>
-
-          <section class="panel portal-card">
-            <h3>🗓️ 랩 미팅 · 면담 일정</h3>
-            ${upcoming.length ? `<ul class="upcoming">${upcoming.map((o) => `
-              <li><span class="upcoming__date">${fmt(o.day)}</span>
-                <span><b class="chip chip--week">${esc(o.type || "일정")}</b> ${esc(o.title)}
-                <small>${[o.time, o.location].filter(Boolean).map(esc).join(" · ")}</small></span></li>`).join("")}</ul>`
-              : `<p class="muted">다가오는 일정이 없어요.</p>`}
-            <div class="cal portal-cal">
-              <div class="cal__head">
-                <button class="slider__btn" id="pcPrev" aria-label="이전 달"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                <strong id="pcTitle"></strong>
-                <button class="slider__btn" id="pcNext" aria-label="다음 달"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-              </div>
-              <div class="cal__week">${DAYS.map((d) => `<span>${d}</span>`).join("")}</div>
-              <div class="cal__grid" id="pcGrid"></div>
-            </div>
-            <div class="pc-detail" id="pcDetail" aria-live="polite"></div>
-          </section>
         </div>
 
         <section class="panel portal-card portal-report" id="reportBox"></section>
         <section class="panel portal-card portal-report" id="profileBox"></section>`;
 
-      root.querySelector("#ptLogout").addEventListener("click", () => { S.remove("advisee"); month = null; window.toast("로그아웃했어요."); drawLogin(); });
-
-      /* 달력 */
-      const byDay = new Map();
-      occ.forEach((o) => (byDay.get(o.dayKey) || byDay.set(o.dayKey, []).get(o.dayKey)).push(o));
-      const drawCal = () => {
-        root.querySelector("#pcTitle").textContent = `${month.getFullYear()}년 ${month.getMonth() + 1}월`;
-        const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
-        let html = "";
-        for (let i = 0; i < month.getDay(); i++) html += `<span class="cal__day is-empty"></span>`;
-        for (let d = 1; d <= days; d++) {
-          const date = new Date(month.getFullYear(), month.getMonth(), d), k = key(date), ev = byDay.get(k);
-          html += `<button class="cal__day ${ev ? "has-class" : ""} ${+date === +today ? "is-today" : ""} ${selected && +date === +selected ? "is-selected" : ""} ${date.getDay() === 0 ? "is-sun" : date.getDay() === 6 ? "is-sat" : ""}"
-            data-d="${k}" aria-label="${fmt(date)}${ev ? ", 일정 " + ev.length + "개" : ""}">
-            <span class="cal__num">${d}</span>${ev ? `<span class="cal__tag">${esc(ev[0].type || "일정")}</span>` : ""}</button>`;
-        }
-        root.querySelector("#pcGrid").innerHTML = html;
-        const sel = selected ? byDay.get(key(selected)) : null;
-        root.querySelector("#pcDetail").innerHTML = selected ? `<p class="cd-date">${fmt(selected)}</p>${sel ? sel.map((o) => `
-          <div class="cd-event"><span class="chip chip--event">${esc(o.type || "일정")}</span><h4>${esc(o.title)}</h4>
-            ${o.time || o.location ? `<ul class="cd-meta">${o.time ? `<li>⏰ ${esc(o.time)}</li>` : ""}${o.location ? `<li>📍 ${esc(o.location)}</li>` : ""}</ul>` : ""}
-            ${o.note ? `<p class="cd-note">${esc(o.note)}</p>` : ""}</div>`).join("") : `<p class="muted">이 날은 일정이 없어요.</p>`}` : "";
-      };
-      root.querySelector("#pcGrid").addEventListener("click", (e) => { const b = e.target.closest("[data-d]"); if (b) { selected = parse(b.dataset.d); drawCal(); } });
-      root.querySelector("#pcPrev").addEventListener("click", () => { month = new Date(month.getFullYear(), month.getMonth() - 1, 1); drawCal(); });
-      root.querySelector("#pcNext").addEventListener("click", () => { month = new Date(month.getFullYear(), month.getMonth() + 1, 1); drawCal(); });
-      drawCal();
+      root.querySelector("#ptLogout").addEventListener("click", () => { S.remove("advisee"); window.toast("로그아웃했어요."); drawLogin(); });
 
       drawReport(st);
       drawProfile(st);

@@ -664,3 +664,4 @@ body.is-admin .connect .admin-edit { display: inline-flex; margin: 16px 0 0; }
 .pf-photo-preview small { font-size: 12px; color: var(--muted); }
 .profile-last { margin-top: 12px; }
 #profileBox { margin-top: 18px; }
+.portal-grid--one { grid-template-columns: 1fr; }
