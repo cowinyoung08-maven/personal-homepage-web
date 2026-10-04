@@ -14,29 +14,63 @@
       ${s.description ? `<p>${esc(s.description)}</p>` : ""}
     </header>`;
 
+  // ── 장식 그림 (잎사귀 선 그림 · 반짝임 · 원형 도장) ──
+  const LEAF = (cls) => `
+    <svg class="${cls}" viewBox="0 0 120 230" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M58 226C57 170 60 100 72 8"/>
+      <path d="M58 190C38 183 20 170 12 148C34 150 51 166 58 190Z"/><path d="M58 190L24 157"/>
+      <path d="M59 158C80 150 97 136 106 114C84 118 66 134 59 158Z"/><path d="M59 158L96 124"/>
+      <path d="M61 124C41 116 27 101 21 80C42 84 56 100 61 124Z"/><path d="M61 124L30 90"/>
+      <path d="M64 92C82 84 95 69 99 50C80 54 68 70 64 92Z"/><path d="M64 92L92 60"/>
+      <path d="M67 58C52 50 44 37 42 20C57 26 65 40 67 58Z"/><path d="M67 58L47 28"/>
+    </svg>`;
+  const SPARK = (cls) => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0C12.8 8 16 11.2 24 12C16 12.8 12.8 16 12 24C11.2 16 8 12.8 0 12C8 11.2 11.2 8 12 0Z" fill="currentColor"/></svg>`;
+  const STAMP = (text) => `
+    <svg class="stamp" viewBox="0 0 160 160" aria-hidden="true">
+      <defs><path id="stampPath" d="M80 80m-62 0a62 62 0 1 1 124 0a62 62 0 1 1 -124 0"/></defs>
+      <circle cx="80" cy="80" r="44" fill="none" stroke="currentColor" stroke-width="1"/>
+      <text><textPath href="#stampPath" textLength="385" lengthAdjust="spacing">${esc(text)}</textPath></text>
+      <g transform="translate(66 50) scale(.26)" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round">
+        <path d="M58 226C57 170 60 100 72 8"/><path d="M58 190C38 183 20 170 12 148C34 150 51 166 58 190Z"/>
+        <path d="M59 158C80 150 97 136 106 114C84 118 66 134 59 158Z"/><path d="M61 124C41 116 27 101 21 80C42 84 56 100 61 124Z"/>
+        <path d="M64 92C82 84 95 69 99 50C80 54 68 70 64 92Z"/><path d="M67 58C52 50 44 37 42 20C57 26 65 40 67 58Z"/>
+      </g>
+    </svg>`;
+  const arrow = `<span class="arr" aria-hidden="true">→</span>`;
+
   // ── 기본 정보 ──
   document.title = C.site.title;
   $("#brand").innerHTML =
-    `<span class="brand__mark">YM</span><span class="brand__text"><small>${esc(C.site.university)} ${esc(C.site.department)}</small>${esc(C.site.shortTitle)}</span>`;
+    `<span class="brand__mark">${LEAF("brand__leaf")}</span><span class="brand__text">${esc(C.site.shortTitle)}<small>${esc(C.site.university)} ${esc(C.site.department)}</small></span>`;
 
   // ── 메뉴 ──
   $("#nav").innerHTML = list(C.nav, (n) => `<a href="#${esc(n.id)}" data-id="${esc(n.id)}">${esc(n.label)}</a>`);
 
-  // ── 첫 화면: 사진 + 이름 + 직위 + 한 줄 소개 ──
+  // ── 첫 화면: 이름 + 직위 + 한 줄 소개 / 아치형 사진 ──
   const h = C.hero;
   $("#hero").innerHTML = `
+    ${LEAF("deco-leaf deco-leaf--hero")}
     <div class="container home-hero">
       <div class="home-hero__text">
-        <span class="badge"><span class="badge__dot"></span>${esc(h.badge)}</span>
-        <h1 class="home-hero__name">${esc(h.name)}<span>${esc(h.nameEn)}</span></h1>
+        <span class="hello">${esc(h.badge)}</span>
+        <h1 class="home-hero__name">${esc(h.name)}<em>${esc(h.nameEn)}</em></h1>
         <p class="home-hero__pos">${esc(h.position)}</p>
         <p class="home-hero__tag">${br(h.tagline)}</p>
         ${(h.keywords || []).length ? `<ul class="home-hero__kw">${list(h.keywords, (k) => `<li>${esc(k)}</li>`)}</ul>` : ""}
         <div class="hero__buttons">
-          ${list(h.buttons, (b) => `<a class="btn btn--${esc(b.style)}" href="${esc(b.href)}">${esc(b.label)}</a>`)}
+          ${list(h.buttons, (b) => b.style === "ghost"
+            ? `<a class="text-link" href="${esc(b.href)}">${esc(b.label)} ${arrow}</a>`
+            : `<a class="btn btn--${esc(b.style)}" href="${esc(b.href)}">${esc(b.label)} ${arrow}</a>`)}
         </div>
       </div>
-      ${h.photo ? `<figure class="home-hero__photo"><img src="${esc(h.photo)}" alt="${esc(h.name)} ${esc(h.nameEn)} 사진" onerror="this.parentElement.remove()" /></figure>` : ""}
+      ${h.photo ? `
+      <figure class="home-hero__photo">
+        <span class="home-hero__disc" aria-hidden="true"></span>
+        <svg class="home-hero__swirl" viewBox="0 0 300 200" aria-hidden="true"><path d="M2 150C60 40 150 20 170 80C185 125 120 150 110 105C98 52 190 8 298 30" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+        ${LEAF("home-hero__leaf")}
+        ${SPARK("spark spark--1")}${SPARK("spark spark--2")}
+        <img src="${esc(h.photo)}" alt="${esc(h.name)} ${esc(h.nameEn)} 사진" onerror="this.parentElement.remove()" />
+      </figure>` : ""}
     </div>`;
 
   // ── 영역별 HTML ──
@@ -45,59 +79,75 @@
 
   const aboutHTML = `
     <section class="section" id="about">
+      ${LEAF("deco-leaf deco-leaf--about")}
       <div class="container">
         ${head(A)}
-        <div class="about">
-          <div class="about__text reveal"><p>${br(A.text)}</p></div>
-          <div class="about__timeline reveal">
-            <h3>${esc(A.timelineTitle || "약력")}</h3>
-            ${groups.map((g) => `
-              <div class="tl-group">
-                <h4>${esc(g)}</h4>
-                <ol class="tl ${(A.timeline || []).some((t) => t.group === g && t.year) ? "" : "tl--noyear"}">${(A.timeline || []).filter((t) => t.group === g).map((t) => `
-                  <li><span class="tl__year">${esc(t.year)}</span><span class="tl__text">${esc(t.text)}</span></li>`).join("")}</ol>
-              </div>`).join("")}
+        <div class="about-card reveal">
+          <div class="about-card__stamp">${STAMP("RESEARCH · TEACHING · MENTORING · ")}</div>
+          <div class="about-card__text">
+            <p>${br(A.text)}</p>
+            <p class="about__sign">${esc(h.nameEn)}</p>
           </div>
+        </div>
+        <h3 class="sub-title sub-title--center reveal">${esc(A.timelineTitle || "약력")}</h3>
+        <div class="tl-cols">
+          ${groups.map((g) => `
+            <div class="tl-group reveal">
+              <h4>${esc(g)}</h4>
+              <ol class="tl ${(A.timeline || []).some((t) => t.group === g && t.year) ? "" : "tl--noyear"}">${(A.timeline || []).filter((t) => t.group === g).map((t) => `
+                <li><span class="tl__year">${esc(t.year)}</span><span class="tl__text">${esc(t.text)}</span></li>`).join("")}</ol>
+            </div>`).join("")}
         </div>
       </div>
     </section>`;
 
+  const Sc = R.scholar;
   const researchHTML = `
     <section class="section section--tint" id="research">
       <div class="container">
         ${head(R)}
         ${R.statement ? `<blockquote class="statement reveal"><p>${br(R.statement)}</p></blockquote>` : ""}
-        ${R.scholar ? `
-          <div class="scholar reveal">
-            <div class="scholar__head">
-              <span class="scholar__logo" aria-hidden="true">🎓</span>
-              <div><strong>Google Scholar</strong><small>${esc(R.scholar.asOf)} 기준</small></div>
-              ${R.scholar.url ? `<a class="btn btn--ghost scholar__btn" href="${esc(R.scholar.url)}" target="_blank" rel="noopener">프로필 보기 ↗</a>` : ""}
-            </div>
-            <dl class="scholar__stats">${list(R.scholar.stats, (s) => `<div><dt>${esc(s.label)}</dt><dd>${esc(s.value)}</dd></div>`)}</dl>
-            ${(R.scholar.interests || []).length ? `<ul class="scholar__kw">${list(R.scholar.interests, (k) => `<li>${esc(k)}</li>`)}</ul>` : ""}
-          </div>` : ""}
-        <h3 class="sub-title reveal">${esc(R.topicsTitle || "주요 연구 주제")}</h3>
-        <div class="topics">
-          ${list(R.topics, (t) => `
-            <article class="topic reveal">
-              <span class="topic__icon">${esc(t.icon)}</span>
+      </div>
+    </section>
+    ${Sc && (Sc.stats || []).length ? `
+    <section class="band" aria-label="Google Scholar 지표">
+      <div class="container">
+        <dl class="band__stats">${list(Sc.stats, (s) => `<div class="reveal"><dd>${esc(s.value)}</dd><dt>${esc(s.label)}</dt></div>`)}</dl>
+        <p class="band__note">Google Scholar · ${esc(Sc.asOf)} 기준
+          ${Sc.url ? ` · <a href="${esc(Sc.url)}" target="_blank" rel="noopener">프로필 보기 ↗</a>` : ""}</p>
+      </div>
+    </section>` : ""}
+    <section class="section section--plain" id="research-topics">
+      <div class="container">
+        <header class="section__head section__head--sub reveal">
+          <span class="eyebrow">Research Areas</span>
+          <h2>${esc(R.topicsTitle || "주요 연구 주제")}</h2>
+        </header>
+        <div class="svc reveal">
+          ${list(R.topics, (t, i) => `
+            <article class="svc__item">
+              <span class="svc__icon svc__icon--${i % 2 ? "clay" : "sage"}" aria-hidden="true"><i>${esc(t.icon)}</i></span>
               <h4>${esc(t.title)}</h4>
               <p>${esc(t.text)}</p>
             </article>`)}
         </div>
         ${(R.projects || []).length ? `
-          <h3 class="sub-title reveal">${esc(R.projectsTitle || "연구 프로젝트")}</h3>
+          <header class="section__head section__head--sub section__head--gap reveal">
+            <span class="eyebrow">Projects</span>
+            <h2>${esc(R.projectsTitle || "연구 프로젝트")}</h2>
+          </header>
           <div class="projects">
-            ${list(R.projects, (p) => `
+            ${list(R.projects, (p, i) => `
               <article class="project reveal">
-                <div class="project__meta">
-                  ${p.period ? `<span class="project__period">${esc(p.period)}</span>` : ""}
-                  ${p.status ? `<span class="chip ${/완료/.test(p.status) ? "chip--closed" : "chip--week"}">${esc(p.status)}</span>` : ""}
+                <div class="project__top project__top--${i % 2 ? "clay" : "sage"}">
+                  ${p.funder ? `<span class="project__funder">${esc(p.funder)}</span>` : ""}
+                  ${p.status ? `<span class="chip ${/완료/.test(p.status) ? "chip--closed" : "chip--live"}">${esc(p.status)}</span>` : ""}
                 </div>
-                <h4>${esc(p.title)}</h4>
-                ${p.funder ? `<p class="project__funder">🏛️ ${esc(p.funder)}${p.role ? ` · ${esc(p.role)}` : ""}</p>` : ""}
-                ${p.text ? `<p>${esc(p.text)}</p>` : ""}
+                <div class="project__body">
+                  <h4>${esc(p.title)}</h4>
+                  <p class="project__meta">${[p.period, p.role].filter(Boolean).map(esc).join(" · ")}</p>
+                  ${p.text ? `<p>${esc(p.text)}</p>` : ""}
+                </div>
               </article>`)}
           </div>` : ""}
       </div>
@@ -330,29 +380,45 @@
   // ── 푸터: 연락처 ──
   const Pr = C.professor;
   const initial = esc((Pr.name || "?").trim().charAt(0));
+  const contactItem = (c) => c.href ? `<a href="${esc(c.href)}">${esc(c.value)}</a>` : `<span>${esc(c.value)}</span>`;
   $("#footer").innerHTML = `
-    <div class="container">
-      <div class="prof reveal" id="contact">
-        <div class="prof__photo">
-          ${Pr.photo ? `<img src="${esc(Pr.photo)}" alt="${esc(Pr.name)} 사진" onerror="this.remove()" />` : ""}
-          <span>${initial}</span>
-        </div>
-        <div class="prof__body">
-          <span class="eyebrow">${esc(Pr.eyebrow)}</span>
+    <section class="connect" id="contact">
+      <span class="connect__blob" aria-hidden="true"></span>
+      <div class="container connect__inner">
+        <div class="prof__body reveal">
+          <span class="eyebrow eyebrow--light">${esc(Pr.eyebrow)}</span>
           <h2>${esc(Pr.name)}</h2>
           <p class="prof__role">${esc(Pr.role)}</p>
           <p class="prof__bio">${br(Pr.bio)}</p>
-          <ul class="prof__contacts">
-            ${list(Pr.contacts, (c) => `
-              <li><span>${esc(c.icon)}</span><small>${esc(c.label)}</small>
-                ${c.href ? `<a href="${esc(c.href)}">${esc(c.value)}</a>` : `<strong>${esc(c.value)}</strong>`}</li>`)}
-          </ul>
+        </div>
+        <ul class="connect__list reveal">
+          ${list(Pr.contacts, (c) => `
+            <li><small>${esc(c.label)}</small>${contactItem(c)}</li>`)}
+        </ul>
+        <div class="connect__photo reveal">
+          ${Pr.photo ? `<img src="${esc(Pr.photo)}" alt="${esc(Pr.name)} 사진" onerror="this.remove()" />` : ""}
+          <span>${initial}</span>
         </div>
       </div>
-      <div class="footer__bottom">
-        <strong>${esc(C.site.title)}</strong>
-        <p>${esc(C.site.footerNote)}</p>
+    </section>
+    <div class="foot">
+      ${LEAF("deco-leaf deco-leaf--foot")}
+      <div class="container foot__cols">
+        <div class="foot__brand">
+          <strong>${esc(C.site.shortTitle)}</strong>
+          <small>${esc(C.site.university)} ${esc(C.site.department)}</small>
+          <p>${br(h.tagline)}</p>
+        </div>
+        <nav class="foot__nav" aria-label="바로가기">
+          <h4>바로가기</h4>
+          ${list(C.nav, (n) => `<a href="#${esc(n.id)}">${esc(n.label)}</a>`)}
+        </nav>
+        <div class="foot__contact">
+          <h4>연락처</h4>
+          ${list(Pr.contacts, (c) => `<p>${contactItem(c)}</p>`)}
+        </div>
       </div>
+      <p class="foot__note">${esc(C.site.footerNote)}</p>
     </div>`;
 
   // ── 모바일 메뉴 ──
