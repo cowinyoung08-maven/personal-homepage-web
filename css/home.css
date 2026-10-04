@@ -166,6 +166,7 @@ body { line-height: 1.75; background: var(--cream); }
   content: ""; position: absolute; left: 2px; top: .62em; width: 6px; height: 6px; border-radius: 50%; background: var(--pink-400);
 }
 .tl-cols .tl__year:empty { display: none; }
+.tl__yr { margin-right: 4px; font-weight: 800; color: var(--pink-500); font-variant-numeric: tabular-nums; }
 .tl-group h4 { margin: 0 0 14px; font-size: 12.5px; font-weight: 800; letter-spacing: .2em; color: var(--pink-500); }
 .tl { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .tl li { display: grid; grid-template-columns: 72px 1fr; gap: 10px; font-size: 15px; line-height: 1.5; }

@@ -94,8 +94,8 @@
           ${groups.map((g) => `
             <div class="tl-group reveal">
               <h4>${esc(g)}</h4>
-              <ol class="tl ${(A.timeline || []).some((t) => t.group === g && t.year) ? "" : "tl--noyear"}">${(A.timeline || []).filter((t) => t.group === g).map((t) => `
-                <li><span class="tl__year">${esc(t.year)}</span><span class="tl__text">${esc(t.text)}</span></li>`).join("")}</ol>
+              <ol class="tl tl--noyear">${(A.timeline || []).filter((t) => t.group === g).map((t) => `
+                <li><span class="tl__text">${t.year ? `<b class="tl__yr">${esc(t.year)}</b> ` : ""}${esc(t.text)}</span></li>`).join("")}</ol>
             </div>`).join("")}
         </div>
       </div>
