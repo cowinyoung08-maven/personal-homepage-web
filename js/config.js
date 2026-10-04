@@ -310,7 +310,7 @@ window.SITE_CONFIG = {
     description: "함께 연구하는 대학원생들입니다.",
     stages: ["계획서", "연구윤리(IRB) 승인", "예비심사", "본심사", "인준"],
     students: [
-      { name: "박채림", status: "재학", program: "박사과정", major: "미디어", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "b72acedc33efce6309261f0586701cd3d0fe5b182bffca7408cb0336ab77304b", photo: "", keywords: [], works: [] },
+      { name: "박채림", status: "재학", program: "박사과정", major: "미디어", topic: "", thesis: "", year: "", public: true, stage: 3, stageDates: ["", "", "", "", ""], codeHash: "b72acedc33efce6309261f0586701cd3d0fe5b182bffca7408cb0336ab77304b", photo: "", keywords: [], works: [] },
       { name: "김지연", status: "재학", program: "박사과정", major: "미디어", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "7ae988acf952fe9496de640c2d7b2d1f80be52b84d5e9821abc5501abba33724", photo: "", keywords: [], works: [] },
       { name: "조민경", status: "재학", program: "박사과정", major: "과학기술학", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "4ea12d3e48ee1a6faa7279af1f6603919a3422353f63fe9752fffc2a68374814", photo: "", keywords: [], works: [] },
       { name: "신명철", status: "재학", program: "박사과정", major: "과학기술학", topic: "", thesis: "", year: "", public: true, stage: 0, stageDates: ["", "", "", "", ""], codeHash: "a7c7dc5fb783cc6baed3393f4009f2071005fbeb130435708a60145fda723dda", photo: "", keywords: [], works: [] },
