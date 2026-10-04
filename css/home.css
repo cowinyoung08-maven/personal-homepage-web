@@ -656,3 +656,11 @@ body.is-admin .connect .admin-edit { display: inline-flex; margin: 16px 0 0; }
 .db-login .admin-input { flex: 1; width: auto; min-width: 160px; margin: 0; }
 .db-login .field__err { flex-basis: 100%; margin: 0; }
 
+
+/* 학생 전용 공간: 프로필 수정 요청 */
+.field__hint { margin: 6px 0 0; font-size: 12.5px; line-height: 1.6; color: var(--muted); }
+.pf-photo-preview { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.pf-photo-preview img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; object-position: 50% 25%; border: 2px solid var(--pink-200); }
+.pf-photo-preview small { font-size: 12px; color: var(--muted); }
+.profile-last { margin-top: 12px; }
+#profileBox { margin-top: 18px; }

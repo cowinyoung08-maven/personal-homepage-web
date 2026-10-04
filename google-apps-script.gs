@@ -4,6 +4,7 @@
  * 홈페이지에서 보낸 '주간 진행 보고'와 '면담 신청서'를 이 스프레드시트에 한 줄씩 쌓습니다.
  *   - 주간 진행 보고 → '주간보고' 시트
  *   - 면담 신청서     → '면담신청' 시트
+ *   - 프로필 수정 요청 → '프로필수정' 시트
  *   - 관리자 화면의 연결 테스트 → '연결테스트' 시트
  * 시트와 맨 윗줄(열 이름)은 처음 기록이 들어올 때 자동으로 만들어집니다.
  *
@@ -14,7 +15,7 @@
 // 비워두면 확인하지 않고 모두 저장합니다.
 const KEY = "";
 
-const SHEET_NAMES = { report: "주간보고", consult: "면담신청", test: "연결테스트" };
+const SHEET_NAMES = { report: "주간보고", consult: "면담신청", profile: "프로필수정", test: "연결테스트" };
 
 function doPost(e) {
   const lock = LockService.getScriptLock();

@@ -128,7 +128,8 @@
           </section>
         </div>
 
-        <section class="panel portal-card portal-report" id="reportBox"></section>`;
+        <section class="panel portal-card portal-report" id="reportBox"></section>
+        <section class="panel portal-card portal-report" id="profileBox"></section>`;
 
       root.querySelector("#ptLogout").addEventListener("click", () => { S.remove("advisee"); month = null; window.toast("로그아웃했어요."); drawLogin(); });
 
@@ -159,6 +160,87 @@
       drawCal();
 
       drawReport(st);
+      drawProfile(st);
+    };
+
+    /* ── 내 프로필 수정 요청 (교수님이 확인한 뒤 홈페이지에 반영) ── */
+    const workLine = (w) => [w.year, w.type, w.title, w.venue, w.link].map((x) => String(x || "").trim()).join(" | ");
+    const drawProfile = (st) => {
+      const box = root.querySelector("#profileBox");
+      const mine = S.get("profileReqs", []).filter((r) => r["이름"] === st.name);
+      const last = mine[mine.length - 1];
+      box.innerHTML = `
+        <h3>🪪 내 프로필 수정 요청</h3>
+        <p class="muted">지도학생 카드와 프로필 팝업에 보이는 내용이에요. 고칠 부분만 바꿔서 보내면, 교수님이 확인한 뒤 홈페이지에 반영해요.</p>
+        <form class="apply-form profile-form" novalidate>
+          <div class="form-summary" role="alert" hidden></div>
+          <div class="form-grid">
+            <div class="field field--wide"><label class="field__label" for="pfPhoto">사진 (구글 드라이브 공유 주소)</label>
+              <input id="pfPhoto" name="photo" inputmode="url" value="${esc(/drive\.google|docs\.google/.test(st.photo || "") ? st.photo : "")}" placeholder="https://drive.google.com/file/d/…/view" />
+              <p class="field__hint">드라이브에 사진을 올리고 <b>공유 → 링크가 있는 모든 사용자</b>로 바꾼 뒤 주소를 붙여 넣어요. 얼굴이 잘 보이는 정사각형 사진이 좋아요.</p>
+              <div class="pf-photo-preview" id="pfPreview" hidden></div>
+              <p class="field__err"></p></div>
+            <div class="field field--wide"><label class="field__label" for="pfKw">연구 분야 키워드 (쉼표로 구분)</label>
+              <input id="pfKw" name="keywords" value="${esc((st.keywords || []).join(", "))}" placeholder="정치 커뮤니케이션, 뉴스 신뢰, 숙의" /><p class="field__err"></p></div>
+            <div class="field field--wide"><label class="field__label" for="pfTopic">연구 주제</label>
+              <input id="pfTopic" name="topic" value="${esc(st.topic || "")}" placeholder="한 줄로 소개해 주세요" /><p class="field__err"></p></div>
+            <div class="field field--wide"><label class="field__label" for="pfThesis">학위논문 제목 (정해졌다면)</label>
+              <input id="pfThesis" name="thesis" value="${esc(st.thesis || "")}" /><p class="field__err"></p></div>
+            <div class="field field--wide"><label class="field__label" for="pfWorks">대표 연구 업적 (한 줄에 하나)</label>
+              <textarea id="pfWorks" name="works" rows="4" placeholder="2025 | 학술지 | 논문 제목 | 학술지 이름 | 링크(선택)">${esc((st.works || []).map(workLine).join("\n"))}</textarea>
+              <p class="field__hint">형식: <b>연도 | 종류 | 제목 | 학술지·학회 | 링크</b> — 종류는 학술지, 학회 발표, 수상, 프로젝트, 기타 중 하나예요. 교수님 논문 목록에 공동저자로 있는 논문은 따로 적지 않아도 자동으로 보여요.</p>
+              <p class="field__err"></p></div>
+            <div class="field field--wide"><label class="field__label" for="pfNote">교수님께 한마디 (선택)</label>
+              <textarea id="pfNote" name="note" rows="2"></textarea><p class="field__err"></p></div>
+          </div>
+          <button class="btn btn--primary apply-form__submit" type="submit">수정 요청 보내기</button>
+          <p class="report-dest">${window.SheetSync.ready() ? "📤 보내면 교수님의 구글 시트로 전달돼요." : "💾 지금은 구글 시트가 연결되지 않아 이 기기에만 저장돼요."}</p>
+        </form>
+        ${last ? `<p class="muted profile-last">마지막 요청: ${fmtTime(last["제출 시각"])} · 반영되기까지 며칠 걸릴 수 있어요.</p>` : ""}`;
+
+      const form = box.querySelector("form");
+      const preview = box.querySelector("#pfPreview");
+      const showPreview = () => {
+        const v = form.elements.photo.value.trim(), d = v && window.parseDrive ? window.parseDrive(v) : null;
+        preview.hidden = !(d && d.thumb);
+        preview.innerHTML = d && d.thumb ? `<img src="${esc(d.thumb)}" alt="사진 미리보기" referrerpolicy="no-referrer" onerror="this.parentElement.innerHTML='<small>미리보기를 불러오지 못했어요. 공유 설정이 &quot;링크가 있는 모든 사용자&quot;인지 확인해 주세요.</small>'" /><small>미리보기</small>` : "";
+      };
+      form.elements.photo.addEventListener("change", showPreview);
+      showPreview();
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const v = (n) => form.elements[n].value.trim();
+        const photo = v("photo");
+        const errs = [];
+        const setErr = (name, msg) => {
+          const wrap = form.elements[name].closest(".field");
+          wrap.classList.toggle("is-invalid", !!msg);
+          wrap.querySelector(".field__err").textContent = msg;
+          if (msg) errs.push({ name, msg });
+        };
+        setErr("photo", !photo || (window.parseDrive && window.parseDrive(photo)) ? "" : "구글 드라이브 공유 주소만 넣을 수 있어요.");
+        const badLine = v("works").split("\n").map((l) => l.trim()).filter(Boolean).find((l) => l.split("|").length < 3);
+        setErr("works", badLine ? `'${badLine.slice(0, 30)}' 줄의 형식을 확인해 주세요. (연도 | 종류 | 제목 | …)` : "");
+        const sum = form.querySelector(".form-summary");
+        if (errs.length) {
+          sum.hidden = false;
+          sum.innerHTML = `<strong>확인이 필요한 항목이 ${errs.length}개 있어요</strong><ul>${errs.map((x) => `<li>${esc(x.msg)}</li>`).join("")}</ul>`;
+          form.elements[errs[0].name].focus();
+          return;
+        }
+        sum.hidden = true;
+        const data = {
+          "이름": st.name, "과정": [st.program, st.major].filter(Boolean).join(" · "),
+          "사진 주소": photo, "연구 분야 키워드": v("keywords"), "연구 주제": v("topic"), "학위논문 제목": v("thesis"),
+          "대표 연구 업적": v("works"), "한마디": v("note"), "제출 시각": new Date().toISOString()
+        };
+        const all = S.get("profileReqs", []); all.push(data); S.set("profileReqs", all);
+        const btn = form.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = "보내는 중…";
+        const sent = await window.SheetSync.send("profile", data);
+        window.toast(sent ? "수정 요청을 보냈어요. 교수님이 확인한 뒤 반영돼요! 📤" : "요청을 저장했어요. (구글 시트 미연결 — 이 기기에만 저장)");
+        drawProfile(st);
+      });
     };
 
     /* ── 주간 진행 보고 ── */
