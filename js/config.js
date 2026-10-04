@@ -417,7 +417,7 @@ window.SITE_CONFIG = {
   // key: 아무 문자열 — Apps Script의 KEY와 같게 맞추면 그 값이 맞는 기록만 저장돼요. (비워도 됨)
   sheets: {
     endpoint: "https://script.google.com/macros/s/AKfycbwhvdGgvKN0aErYNUbZw84rZUqpI4cCYGtOgWx-y45jXqc8ot_M80J7Uocgftt9Lo4/exec",
-    sheetUrl: "",
+    sheetUrl: "https://docs.google.com/spreadsheets/d/10ObZuygkI2oWzoncfsBX6FWUlX5rwYfTfPm6MXxRbAo/edit",
     key: ""
   },
   // ── 연락처 (페이지 끝) ─────────────────────────

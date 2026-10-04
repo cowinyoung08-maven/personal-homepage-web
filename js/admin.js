@@ -960,7 +960,9 @@
   }
   // 기록 위에 붙는 안내 줄: 어디서 불러온 기록인지 + 새로고침 / 비밀번호 다시 입력
   function serverBarHTML(sv) {
-    if (!sv.on) return `<p class="muted ad-hint">💾 서버(데이터베이스)가 연결되지 않아 <b>이 브라우저</b>에 저장된 기록만 보여요.</p>`;
+    if (!sv.on) return window.SheetSync.ready()
+      ? `<p class="muted ad-hint">📊 모든 방문자의 기록은 <b>구글 시트</b>에 모여요. 여기에는 <b>이 브라우저</b>에서 낸 기록만 보여요.</p>`
+      : `<p class="muted ad-hint">💾 서버나 구글 시트가 연결되지 않아 <b>이 브라우저</b>에 저장된 기록만 보여요.</p>`;
     if (sv.state === "ok") return `<p class="ad-note">🗄️ 서버 데이터베이스에 저장된 <b>모든 방문자의 기록</b>이에요. <button class="pill-btn" data-db-refresh>새로고침</button></p>`;
     if (sv.state === "loading") return `<p class="ad-note">🗄️ 서버에서 기록을 불러오는 중…</p>`;
     if (sv.state === "login") return `
@@ -999,7 +1001,10 @@
     const head = (f) => (f.type === "checkbox" ? "개인정보 동의" : f.label);
     main.innerHTML = h2("면담 신청 내역", `입학·지도 문의로 접수된 신청서 ${list.length}건`) + serverBarHTML(sv) + `
       <div class="ad-table-head"><h3>신청 ${list.length}건</h3>
-        <button class="pill-btn pill-btn--solid" id="csCsv" ${list.length ? "" : "disabled"}>엑셀(CSV) 내려받기</button></div>
+        <div class="ad-row">
+          ${(window.SITE_CONFIG.sheets || {}).sheetUrl ? `<a class="pill-btn" href="${esc(window.SITE_CONFIG.sheets.sheetUrl)}" target="_blank" rel="noopener">구글 시트 열기 ↗</a>` : ""}
+          <button class="pill-btn pill-btn--solid" id="csCsv" ${list.length ? "" : "disabled"}>엑셀(CSV) 내려받기</button>
+        </div></div>
       ${list.length ? `<div class="ad-table-wrap"><table class="ad-table">
         <thead><tr><th>#</th>${fields.map((f) => `<th>${esc(head(f))}</th>`).join("")}<th>접수 시각</th><th></th></tr></thead>
         <tbody>${list.map((a, i) => `<tr><td>${i + 1}</td>${fields.map((f) => `<td class="${f.type === "textarea" ? "td-long" : ""}">${esc(val(a, f))}</td>`).join("")}
