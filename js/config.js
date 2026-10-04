@@ -244,7 +244,7 @@ window.SITE_CONFIG = {
       { term: "2026년 2학기", courses: [
         { icon: "🏛️", title: "미디어와 정치", en: "Media & Politics", level: "", schedule: "화·목 12:00 ~ 13:15 · 미디어관 410호",
           text: "미디어 생태계의 급격한 변동 속에서 정치커뮤니케이션 이론과 모델을 바탕으로 정치와 민주주의에서 미디어와 커뮤니케이션의 다양한 역할을 탐색합니다.",
-          syllabus: "", site: "https://cowinyoung08-maven.github.io/lecture_webpage/", siteLabel: "강의 사이트" }
+          syllabus: "", site: "https://lecturewebpage-production.up.railway.app/", siteLabel: "강의 사이트" }
       ] },
       { term: "그 밖의 담당 과목", courses: [
         { icon: "🌐", title: "디지털 미디어와 민주주의 프로젝트", en: "", level: "", schedule: "", text: "", syllabus: "", site: "", siteLabel: "" },
