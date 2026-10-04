@@ -1,0 +1,16 @@
+{
+  "name": "personal-homepage",
+  "version": "1.0.0",
+  "private": true,
+  "description": "민영 교수 개인 홈페이지 — 정적 파일 + 면담 신청·진행 보고 저장(PostgreSQL)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "pg": "^8.13.0"
+  }
+}

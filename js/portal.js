@@ -184,7 +184,7 @@
               <textarea id="rpAsk" name="ask" rows="3"></textarea><p class="field__err"></p></div>
           </div>
           <button class="btn btn--primary apply-form__submit" type="submit">보고 제출하기</button>
-          <p class="report-dest">${sheet ? "📤 제출하면 교수님의 구글 시트로 바로 전달돼요." : "💾 지금은 구글 시트가 연결되지 않아 이 기기에만 저장돼요."}</p>
+          <p class="report-dest" id="reportDest">${sheet ? "📤 제출하면 교수님께 바로 전달돼요." : "💾 지금은 서버가 연결되지 않아 이 기기에만 저장돼요."}</p>
         </form>
         <h4 class="report-mine">내가 낸 보고 <small>${mine.length}건 · 이 기기 기준</small></h4>
         ${mine.length ? `<div class="faq">${mine.map((r) => `
@@ -196,6 +196,10 @@
               ${r["자료 링크"] ? `<p><b>자료</b><a href="${esc(r["자료 링크"])}" target="_blank" rel="noopener">구글 드라이브에서 열기 ↗</a></p>` : ""}
             </div></details>`).join("")}</div>` : `<p class="muted">아직 낸 보고가 없어요.</p>`}`;
 
+      window.ServerDB.ready().then((on) => {
+        const d = box.querySelector("#reportDest");
+        if (on && d) d.textContent = "📤 제출하면 교수님께 바로 전달돼요.";
+      });
       const form = box.querySelector("form");
       const setErr = (name, msg) => {
         const wrap = form.elements[name].closest(".field");
@@ -229,8 +233,8 @@
         };
         const all = S.get("reports", []); all.push(data); S.set("reports", all);
         const btn = form.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = "보내는 중…";
-        const sent = await window.SheetSync.send("report", data);
-        window.toast(sent ? "보고를 제출했어요. 구글 시트로 보냈어요! 📤" : "보고를 저장했어요. (구글 시트 미연결 — 이 기기에만 저장)");
+        const [toDb, toSheet] = await Promise.all([window.ServerDB.send("report", data), window.SheetSync.send("report", data)]);
+        window.toast(toDb || toSheet ? "보고를 제출했어요. 교수님께 전달됐어요! 📤" : "보고를 저장했어요. (서버 미연결 — 이 기기에만 저장)");
         drawReport(st);
       });
     };

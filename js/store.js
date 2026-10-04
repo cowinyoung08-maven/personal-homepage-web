@@ -106,6 +106,58 @@
     }
   };
 
+  /* 서버 데이터베이스(PostgreSQL)로 기록 보내기 — Railway에서 server.js로 실행할 때만 동작
+   * 정적 미리보기(서버 없음)에서는 ready()가 false라 지금처럼 이 브라우저에만 저장돼요. */
+  const TOKEN = "home:dbToken";
+  const tk = {
+    get: () => { try { return sessionStorage.getItem(TOKEN) || ""; } catch (e) { return ""; } },
+    set: (v) => { try { v ? sessionStorage.setItem(TOKEN, v) : sessionStorage.removeItem(TOKEN); } catch (e) {} }
+  };
+  const api = (url, opts = {}) => fetch(url, {
+    cache: "no-store", ...opts,
+    headers: { "Content-Type": "application/json", ...(tk.get() ? { Authorization: "Bearer " + tk.get() } : {}), ...(opts.headers || {}) }
+  });
+  let health = null;
+  window.ServerDB = {
+    // 데이터베이스가 연결돼 있는지 (한 번만 확인)
+    ready() {
+      if (!/^https?:$/.test(location.protocol)) return Promise.resolve(false);
+      return health || (health = fetch("/api/health", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : {})).then((j) => !!j.db).catch(() => false));
+    },
+    async send(kind, data) {
+      if (!(await this.ready())) return false;
+      try { return (await api("/api/submit", { method: "POST", body: JSON.stringify({ kind, data }) })).ok; } catch (e) { return false; }
+    },
+    hasToken: () => !!tk.get(),
+    // 관리자 비밀번호로 서버 열쇠(토큰) 받기 — 성공하면 true
+    login(password) {
+      this._pending = (async () => {
+        if (!(await this.ready())) return false;
+        try {
+          const r = await api("/api/login", { method: "POST", body: JSON.stringify({ password }) });
+          if (!r.ok) return false;
+          tk.set((await r.json()).token); return true;
+        } catch (e) { return false; }
+      })();
+      return this._pending;
+    },
+    logout: () => tk.set(""),
+    // 저장된 기록 목록: 성공하면 [{id, kind, data, created_at}], 다시 로그인이 필요하면 "login", 실패하면 null
+    async list(kind) {
+      if (this._pending) await this._pending; // 방금 로그인 중이면 열쇠를 받을 때까지 기다림
+      if (!tk.get()) return "login";
+      try {
+        const r = await api("/api/submissions?kind=" + encodeURIComponent(kind));
+        if (r.status === 401) { tk.set(""); return "login"; }
+        return r.ok ? (await r.json()).rows : null;
+      } catch (e) { return null; }
+    },
+    async remove(id) {
+      try { return (await api("/api/submissions/" + Number(id), { method: "DELETE" })).ok; } catch (e) { return false; }
+    }
+  };
+
   // HTML 특수문자 처리 (여러 파일에서 공용)
   window.esc = (s) =>
     String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

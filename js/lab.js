@@ -261,6 +261,8 @@
         fields.forEach((f) => (row[f.type === "checkbox" ? "개인정보 동의" : f.label] = f.type === "checkbox" ? (data[f.name] ? "동의" : "") : data[f.name]));
         row["제출 시각"] = data.submittedAt;
         window.SheetSync.send("consult", row);
+        // 서버 데이터베이스가 연결돼 있으면 거기에도 저장 (관리자 화면 > 면담 신청에서 확인)
+        if (window.ServerDB) window.ServerDB.send("consult", data);
         box.innerHTML = `
           <div class="done">
             <div class="done__icon">🌿</div>

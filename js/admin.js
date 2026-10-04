@@ -123,6 +123,7 @@
         return;
       }
       ss.set("adminAuthed", C.admin.passwordHash);
+      if (window.ServerDB) window.ServerDB.login(input.value); // 서버 기록(면담 신청·진행 보고)을 볼 열쇠도 함께 받음
       syncLock(); close(); openAdmin(nextTab, nextOpts);
     });
   }
@@ -287,7 +288,8 @@
     root.querySelector("#adClose").addEventListener("click", closeAdmin);
     root.querySelector("#adLogout").addEventListener("click", () => {
       if (dirty && !confirm("저장하지 않은 변경 사항이 사라져요. 로그아웃할까요?")) return;
-      ss.del("adminAuthed"); dirty = false; closeAdmin(); syncLock(); window.toast("관리자 모드에서 나왔어요.");
+      ss.del("adminAuthed"); if (window.ServerDB) window.ServerDB.logout(); for (const k in remote) delete remote[k];
+      dirty = false; closeAdmin(); syncLock(); window.toast("관리자 모드에서 나왔어요.");
     });
     root.querySelector("#adDiscard").addEventListener("click", () => { draft = clone(window.SITE_CONFIG); setDirty(false); draw(); });
     root.querySelector("#adApply").addEventListener("click", applyDraft);
@@ -740,7 +742,9 @@
     const A = draft.advisees || (draft.advisees = { students: [] });
     const stages = A.stages || ["계획서", "연구윤리(IRB) 승인", "예비심사", "본심사", "인준"];
     const list = A.students || (A.students = []);
-    const reports = S.get("reports", []);
+    const redraw = () => root && tab === "advisees" && drawAdvisees(root.querySelector("#adMain"));
+    const sv = useServer("report", redraw);
+    const reports = sv.rows || S.get("reports", []);
     const stageName = (n) => (n <= 0 ? "시작 전" : n >= stages.length ? "모든 단계 완료" : `${stages[n - 1]} 완료`);
     const sheetLink = (draft.sheets || {}).sheetUrl;
     const shown = reports.map((r, i) => ({ ...r, _i: i })).filter((r) => reportFilter === "전체" || r["이름"] === reportFilter).reverse();
@@ -774,7 +778,7 @@
           ${sheetLink ? `<a class="pill-btn" href="${esc(sheetLink)}" target="_blank" rel="noopener">구글 시트 열기 ↗</a>` : ""}
           <button class="pill-btn pill-btn--solid" id="rpCsv" ${reports.length ? "" : "disabled"}>엑셀(CSV) 내려받기</button>
         </div></div>
-      <p class="muted ad-hint">여기에는 <b>이 브라우저</b>에서 제출된 보고만 보여요. 학생들이 각자 낸 보고는 연결된 <b>구글 시트</b>에 모여요.</p>
+      ${serverBarHTML(sv)}
       ${shown.length ? shown.map((r) => `
         <details class="ad-task">
           <summary><strong>${esc(r["이름"])} · ${esc(r["보고 기준일"])}</strong><span class="muted">${fmtTime(r["제출 시각"])} 제출</span>
@@ -804,10 +808,11 @@
       const cols = ["이름", "과정", "보고 기준일", "이번 주 한 일", "다음 주 계획", "질문", "자료 링크"];
       csv("주간진행보고", [[...cols, "제출 시각"], ...reports.map((r) => [...cols.map((c) => r[c] ?? ""), fmtTime(r["제출 시각"])])]);
     });
-    main.querySelectorAll("[data-rdel]").forEach((b) => b.addEventListener("click", (e) => {
+    bindServerBar(main, "report", redraw);
+    main.querySelectorAll("[data-rdel]").forEach((b) => b.addEventListener("click", async (e) => {
       e.preventDefault();
-      if (!confirm("이 보고를 이 브라우저에서 지울까요? (구글 시트의 기록은 그대로예요)")) return;
-      reports.splice(+b.dataset.rdel, 1); S.set("reports", reports); drawAdvisees(main);
+      if (!confirm(sv.rows ? "이 보고를 서버에서 지울까요? 되돌릴 수 없어요." : "이 보고를 이 브라우저에서 지울까요? (구글 시트의 기록은 그대로예요)")) return;
+      if (await removeRecord("report", reports[+b.dataset.rdel], "reports", +b.dataset.rdel)) { issued = null; redraw(); }
     }));
   }
 
@@ -937,26 +942,76 @@
     });
   }
 
+  /* ── 서버 데이터베이스 기록 (Railway + PostgreSQL) ──
+   * 서버가 있으면 모든 방문자가 낸 기록을 서버에서 불러오고, 없으면 이 브라우저 기록을 보여 줌 */
+  let dbOn = null;            // null: 확인 전, true/false: 서버 데이터베이스 연결 여부
+  const remote = {};          // kind → 기록 배열 | "login"(비밀번호 다시 필요) | null(불러오기 실패)
+  const loadingRemote = {};
+  function useServer(kind, redraw) {
+    if (!window.ServerDB) return { on: false };
+    if (dbOn === null) { window.ServerDB.ready().then((v) => { dbOn = v; if (v) redraw(); }); return { on: false }; }
+    if (!dbOn) return { on: false };
+    if (remote[kind] === undefined && !loadingRemote[kind]) {
+      loadingRemote[kind] = true;
+      window.ServerDB.list(kind).then((rows) => { remote[kind] = rows; loadingRemote[kind] = false; redraw(); });
+    }
+    const r = remote[kind];
+    return { on: true, rows: Array.isArray(r) ? r.map((x) => ({ ...x.data, _id: x.id, _at: x.created_at })) : null, state: Array.isArray(r) ? "ok" : r === undefined ? "loading" : r || "error" };
+  }
+  // 기록 위에 붙는 안내 줄: 어디서 불러온 기록인지 + 새로고침 / 비밀번호 다시 입력
+  function serverBarHTML(sv) {
+    if (!sv.on) return `<p class="muted ad-hint">💾 서버(데이터베이스)가 연결되지 않아 <b>이 브라우저</b>에 저장된 기록만 보여요.</p>`;
+    if (sv.state === "ok") return `<p class="ad-note">🗄️ 서버 데이터베이스에 저장된 <b>모든 방문자의 기록</b>이에요. <button class="pill-btn" data-db-refresh>새로고침</button></p>`;
+    if (sv.state === "loading") return `<p class="ad-note">🗄️ 서버에서 기록을 불러오는 중…</p>`;
+    if (sv.state === "login") return `
+      <form class="ad-note db-login" data-db-login>🔒 서버 기록을 보려면 관리자 비밀번호를 한 번 더 입력해 주세요.
+        <input type="password" class="admin-input" placeholder="비밀번호" autocomplete="current-password" aria-label="관리자 비밀번호" />
+        <button class="pill-btn pill-btn--solid" type="submit">불러오기</button><span class="field__err" role="alert"></span></form>`;
+    return `<p class="ad-note">⚠️ 서버에서 기록을 불러오지 못했어요. <button class="pill-btn" data-db-refresh>다시 시도</button></p>`;
+  }
+  function bindServerBar(main, kind, redraw) {
+    const again = main.querySelector("[data-db-refresh]");
+    if (again) again.addEventListener("click", () => { delete remote[kind]; redraw(); });
+    const f = main.querySelector("[data-db-login]");
+    if (f) f.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const ok = await window.ServerDB.login(f.querySelector("input").value);
+      if (!ok) { f.querySelector(".field__err").textContent = "비밀번호가 맞지 않거나 서버에 연결할 수 없어요."; return; }
+      for (const k in remote) delete remote[k];
+      redraw();
+    });
+  }
+  async function removeRecord(kind, item, localKey, localIndex) {
+    if (item && item._id != null) {
+      if (!(await window.ServerDB.remove(item._id))) { window.toast("지우지 못했어요. 다시 로그인해 보세요."); return false; }
+      delete remote[kind]; return true;
+    }
+    const all = S.get(localKey, []); all.splice(localIndex, 1); S.set(localKey, all); return true;
+  }
+
   /* ── 탭: 면담 신청 내역 (입학·지도 문의) ── */
   function drawConsults(main) {
-    const list = S.get("consults", []);
+    const redraw = () => root && tab === "consults" && drawConsults(root.querySelector("#adMain"));
+    const sv = useServer("consult", redraw);
+    const list = sv.rows || S.get("consults", []);
     const fields = ((window.SITE_CONFIG.consult || {}).form || {}).fields || [];
     const val = (a, f) => f.type === "checkbox" ? (a[f.name] ? "동의" : "") : a[f.name] ?? "";
     const head = (f) => (f.type === "checkbox" ? "개인정보 동의" : f.label);
-    main.innerHTML = h2("면담 신청 내역", `입학·지도 문의로 접수된 신청서 ${list.length}건 · 지금은 이 브라우저에 저장된 신청서만 보여요.`) + `
+    main.innerHTML = h2("면담 신청 내역", `입학·지도 문의로 접수된 신청서 ${list.length}건`) + serverBarHTML(sv) + `
       <div class="ad-table-head"><h3>신청 ${list.length}건</h3>
         <button class="pill-btn pill-btn--solid" id="csCsv" ${list.length ? "" : "disabled"}>엑셀(CSV) 내려받기</button></div>
       ${list.length ? `<div class="ad-table-wrap"><table class="ad-table">
         <thead><tr><th>#</th>${fields.map((f) => `<th>${esc(head(f))}</th>`).join("")}<th>접수 시각</th><th></th></tr></thead>
         <tbody>${list.map((a, i) => `<tr><td>${i + 1}</td>${fields.map((f) => `<td class="${f.type === "textarea" ? "td-long" : ""}">${esc(val(a, f))}</td>`).join("")}
-          <td>${fmtTime(a.submittedAt)}</td><td><button class="ad-x" data-del="${i}">삭제</button></td></tr>`).join("")}</tbody>
+          <td>${fmtTime(a.submittedAt || a._at)}</td><td><button class="ad-x" data-del="${i}">삭제</button></td></tr>`).join("")}</tbody>
       </table></div>` : `<p class="ad-empty">아직 접수된 면담 신청서가 없어요.</p>`}`;
+    bindServerBar(main, "consult", redraw);
     main.querySelector("#csCsv").addEventListener("click", () => csv("면담신청", [
-      [...fields.map(head), "접수 시각"], ...list.map((a) => [...fields.map((f) => val(a, f)), fmtTime(a.submittedAt)])
+      [...fields.map(head), "접수 시각"], ...list.map((a) => [...fields.map((f) => val(a, f)), fmtTime(a.submittedAt || a._at)])
     ]));
-    main.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => {
+    main.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", async () => {
       if (!confirm("이 신청서를 지울까요? 되돌릴 수 없어요.")) return;
-      list.splice(+b.dataset.del, 1); S.set("consults", list); drawConsults(main);
+      if (await removeRecord("consult", list[+b.dataset.del], "consults", +b.dataset.del)) redraw();
     }));
   }
 
