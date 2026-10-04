@@ -57,7 +57,7 @@
     ["#research .section__head", "content", "연구", "✏️ 연구 편집"],
     ["#publications .section__head", "content", "논문·저서", "✏️ 논문·저서 편집"],
     ["#teaching .section__head", "content", "강의", "✏️ 강의 편집"],
-    ["#students .section__head", "content", "지도학생", "✏️ 지도학생 편집"],
+    ["#members .section__head", "content", "지도학생", "✏️ 지도학생 편집"],
     ["#showcase .section__head", "content", "학생 우수 작품", "✏️ 학생 우수 작품 편집"],
     ["#lab .section__head", "content", "연구실 소개", "✏️ 연구실 소개 편집"],
     ["#consult .section__head", "content", "입학·지도 문의", "✏️ 입학·지도 문의 편집"],

@@ -150,16 +150,17 @@
           <h4>${esc(L.topicsTitle || "함께 다루는 주제")}</h4>
           <ul class="home-hero__kw lab-topics">${list(L.topics, (t) => `<li>${esc(t)}</li>`)}</ul>` : ""}
       </div>
+      ${(L.mentoring || []).length || (L.rules || []).length ? `
       <div class="lab-cols">
-        <div class="lab-box reveal">
+        ${(L.mentoring || []).length ? `<div class="lab-box reveal">
           <h4>🧭 ${esc(L.mentoringTitle || "지도 방식")}</h4>
           <ol class="lab-list">${list(L.mentoring, (m) => `<li>${esc(m)}</li>`)}</ol>
-        </div>
-        <div class="lab-box reveal">
+        </div>` : ""}
+        ${(L.rules || []).length ? `<div class="lab-box reveal">
           <h4>📌 ${esc(L.rulesTitle || "연구실 규칙")}</h4>
           <ul class="lab-list lab-list--dot">${list(L.rules, (r) => `<li>${esc(r)}</li>`)}</ul>
-        </div>
-      </div>`;
+        </div>` : ""}
+      </div>` : ""}`;
   }
 
   /* ── 입학 · 지도 문의 + 면담 신청서 ── */

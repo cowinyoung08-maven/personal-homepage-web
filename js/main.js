@@ -193,7 +193,7 @@
             <h3 class="term__title reveal">${esc(s.term)}</h3>
             <div class="courses">${list(s.courses, courseHTML)}</div>
           </div>`)}
-        ${SH && (SH.works || []).length ? `
+        ${F.showcase !== false && SH && (SH.works || []).length ? `
           <div class="showcase" id="showcase">
             <header class="section__head section__head--sub reveal">
               <span class="eyebrow">${esc(SH.eyebrow)}</span>
@@ -212,27 +212,28 @@
       <h2>${esc(o.title)}</h2>
       ${o.description ? `<p>${esc(o.description)}</p>` : ""}
     </header>` : "";
+  // 연구실 소개 → 지도학생 소개 순서, 그다음 (색 바탕) 입학·지도 문의 · 자료실 · 학생 전용
   const studentsHTML = `
     <section class="section" id="students">
       <div class="container">
-        ${head(S)}
-        <nav class="lab-subnav reveal" aria-label="지도학생 영역 바로가기">
-          <a href="#members">구성원</a>
+        ${C.lab ? `<div class="lab-part" id="lab">${head(C.lab)}` : ""}
+        <nav class="lab-subnav reveal" aria-label="연구실 영역 바로가기">
           ${C.lab ? `<a href="#lab">연구실 소개</a>` : ""}
+          <a href="#members">지도학생</a>
           ${C.consult ? `<a href="#consult">입학 · 지도 문의</a>` : ""}
           ${C.resources ? `<a href="#resources">자료실</a>` : ""}
           ${C.portal ? `<a href="#portal">🔒 학생 전용</a>` : ""}
         </nav>
-        <div id="members"><div id="membersApp"></div></div>
-        ${C.portal ? `<div class="lab-part portal" id="portal">${subHead(C.portal)}<div id="portalApp"></div></div>` : ""}
+        ${C.lab ? `<div id="labApp"></div></div>` : ""}
+        <div class="lab-part" id="members">${C.lab ? subHead(S) : head(S)}<div id="membersApp"></div></div>
       </div>
     </section>
-    ${C.lab || C.consult || C.resources ? `
+    ${C.consult || C.resources || C.portal ? `
     <section class="section section--tint" id="lab-area">
       <div class="container">
-        ${C.lab ? `<div class="lab-part" id="lab">${subHead(C.lab)}<div id="labApp"></div></div>` : ""}
         ${C.consult ? `<div class="lab-part" id="consult">${subHead(C.consult)}<div id="consultApp"></div></div>` : ""}
         ${C.resources ? `<div class="lab-part" id="resources">${subHead(C.resources)}<div id="resourcesApp"></div></div>` : ""}
+        ${C.portal ? `<div class="lab-part portal" id="portal">${subHead(C.portal)}<div id="portalApp"></div></div>` : ""}
       </div>
     </section>` : ""}`;
 
