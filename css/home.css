@@ -676,3 +676,5 @@ body.is-admin .connect .admin-edit { display: inline-flex; margin: 16px 0 0; }
 .pub-older__btns { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
 .pub-older .text-link { min-height: 44px; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
 @media (max-width: 560px) { .pub-older { padding: 18px; } .pub-older__btns { width: 100%; } }
+/* 연구 주제 칸 수가 줄의 배수가 아닐 때 마지막 칸 오른쪽 선이 빈칸으로 이어지지 않게 */
+.svc__item:last-child { border-right: 0 !important; }
