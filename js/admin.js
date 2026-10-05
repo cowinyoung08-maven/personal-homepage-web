@@ -63,6 +63,7 @@
     ["#consult .section__head", "content", "입학·지도 문의", "✏️ 입학·지도 문의 편집"],
     ["#resources .section__head", "content", "자료실", "✏️ 자료실 편집"],
     ["#portal .section__head", "advisees", null, "🎓 지도학생 관리 (진행 단계 · 코드 · 보고)"],
+    ["#portal .section__head", "timeline", null, "📅 학기 타임라인 확인"],
     ["#contact .prof__body", "content", "연락처", "✏️ 연락처 편집"],
     ["#curriculum .section__head", "content", "주차별 일정", "✏️ 주차별 일정 편집"],
     ["#schedule", "calendar", null, "📅 일정 추가 · 수정 · 삭제"],
@@ -122,6 +123,7 @@
         return;
       }
       ss.set("adminAuthed", C.admin.passwordHash);
+      admPw = input.value; // 학기 타임라인을 시트에서 읽을 때 쓰도록 이 페이지 메모리에만 잠시 둠 (저장하지 않음)
       if (window.ServerDB) window.ServerDB.login(input.value); // 서버 기록(면담 신청·진행 보고)을 볼 열쇠도 함께 받음
       syncLock(); close(); openAdmin(nextTab, nextOpts);
     });
@@ -236,7 +238,7 @@
   const FEAT = C.features || {};
   const TABS = [
     ["info", "⚙️", "사이트 정보"], ["content", "🧩", "섹션 내용"],
-    ["advisees", "🎓", "지도학생 관리"], ["consults", "🌿", "면담 신청"],
+    ["advisees", "🎓", "지도학생 관리"], ["timeline", "📅", "학기 타임라인"], ["consults", "🌿", "면담 신청"],
     ["notices", "📢", "공지"], ["sheets", "📊", "구글 시트 연결"], ["file", "💾", "설정 파일"],
     // ↓ 강의 사이트에서 가져온 탭 (해당 기능을 켰을 때만 보임)
     ["calendar", "📅", "수업 일정", "curriculum"], ["students", "👥", "수강생 명단", "join"],
@@ -314,7 +316,7 @@
     const main = root.querySelector("#adMain");
     main.scrollTop = 0;
     ({ info: drawInfo, content: drawContent, calendar: drawCalendar, students: drawStudents, consults: drawConsults,
-       advisees: drawAdvisees, labcal: drawLabCal, sheets: drawSheets, notices: drawNotices, applications: drawApps,
+       advisees: drawAdvisees, timeline: drawTimelineAdmin, labcal: drawLabCal, sheets: drawSheets, notices: drawNotices, applications: drawApps,
        attendance: drawAttendance, submissions: drawSubs, poll: drawPoll, file: drawFile })[tab](main);
   }
   const h2 = (t, sub) => `<div class="ad-head"><h2>${t}</h2>${sub ? `<p>${sub}</p>` : ""}</div>`;
@@ -988,6 +990,87 @@
       delete remote[kind]; return true;
     }
     const all = S.get(localKey, []); all.splice(localIndex, 1); S.set(localKey, all); return true;
+  }
+
+  /* ── 탭: 학기 타임라인 (학생이 올린 학기 계획 · 완료 여부 · 교수 확인과 메모) ── */
+  let admPw = ""; // 관리자 비밀번호 — 시트 쪽에서 다시 확인하므로 메모리에만 잠시 둠
+  const tlAdm = { rows: null, term: null };
+  function drawTimelineAdmin(main) {
+    const TL = window.TL, API = window.SheetAPI;
+    const redraw = () => root && tab === "timeline" && drawTimelineAdmin(root.querySelector("#adMain"));
+    const head = h2("학기 타임라인", "지도학생이 학기마다 올린 계획과 진행 상황이에요. 항목마다 '확인'을 누르고 메모를 남길 수 있어요. <b>메모는 로그인한 학생 모두에게 보여요.</b>");
+    if (!API || !API.ready() || !TL) { main.innerHTML = head + `<p class="ad-empty">구글 시트가 연결되지 않아 쓸 수 없어요. (구글 시트 연결 탭)</p>`; return; }
+    if (!admPw) {
+      main.innerHTML = head + `<form class="ad-note db-login" id="tlPw">🔒 시트에서 기록을 불러오려면 관리자 비밀번호를 한 번 더 입력해 주세요.
+        <input type="password" class="admin-input" placeholder="비밀번호" autocomplete="current-password" aria-label="관리자 비밀번호" />
+        <button class="pill-btn pill-btn--solid" type="submit">불러오기</button><span class="field__err" role="alert"></span></form>`;
+      main.querySelector("#tlPw").addEventListener("submit", (e) => {
+        e.preventDefault(); const v = e.target.querySelector("input").value;
+        if (hashPw(v) !== C.admin.passwordHash) { e.target.querySelector(".field__err").textContent = "비밀번호가 맞지 않아요."; return; }
+        admPw = v; tlAdm.rows = null; redraw();
+      });
+      return;
+    }
+    if (!tlAdm.rows) {
+      main.innerHTML = head + `<p class="ad-note">🗄️ 시트에서 불러오는 중…</p>`;
+      const fail = (msg) => {
+        if (!root || tab !== "timeline") return;
+        const m = root.querySelector("#adMain");
+        m.innerHTML = head + `<p class="ad-note">⚠️ ${esc(msg)} <button class="pill-btn" id="tlAdmRetry">다시 시도</button></p>`;
+        m.querySelector("#tlAdmRetry").addEventListener("click", redraw);
+      };
+      API.call("adm_all", { password: admPw }).then((res) => {
+        if (!res || !res.ok) { if (res && res.error === "auth") admPw = ""; fail((res && (res.message || res.error)) || "불러오지 못했어요."); return; }
+        tlAdm.rows = res.rows || []; redraw();
+      }).catch(() => fail("시트에 연결하지 못했어요. Apps Script가 2판으로 배포되었는지 확인해 주세요."));
+      return;
+    }
+    const rows = tlAdm.rows, terms = TL.terms(rows);
+    if (!tlAdm.term || !terms.includes(tlAdm.term)) tlAdm.term = window.currentTerm();
+    const tr = rows.filter((r) => r.term === tlAdm.term);
+    const studs = ((C.advisees || {}).students || []);
+    const last = (rs) => rs.map((r) => r.updated).filter(Boolean).sort().pop();
+    main.innerHTML = head + `
+      <div class="ad-table-head"><div class="ad-row">
+        <select class="ad-select" id="tlAdmTerm" aria-label="학기">${terms.map((t) => `<option value="${esc(t)}" ${t === tlAdm.term ? "selected" : ""}>${esc(window.termLabel(t))}</option>`).join("")}</select>
+        <button class="pill-btn" id="tlAdmReload">새로고침</button>
+        ${(draft.sheets || {}).sheetUrl ? `<a class="pill-btn" href="${esc(draft.sheets.sheetUrl)}" target="_blank" rel="noopener">구글 시트 열기 ↗</a>` : ""}
+      </div></div>
+      <div class="ad-table-wrap"><table class="ad-table">
+        <thead><tr><th>학생</th><th>계획</th><th>완료</th><th>목표일 지난 미완료</th><th>교수 확인</th><th>최근 수정</th></tr></thead>
+        <tbody>${studs.map((s) => { const rs = tr.filter((r) => r.name === s.name), x = TL.sum(rs);
+          return `<tr><td><b>${esc(s.name)}</b><br><small class="muted">${esc([s.program, s.major].filter(Boolean).join(" · "))}</small></td>
+            <td>${rs.length ? `${rs.length}개 항목` : `<span class="tl-late">미제출</span>`}</td>
+            <td>${rs.length ? `${x.done}/${x.total} (${x.pct}%)` : "—"}</td>
+            <td>${x.late ? `<span class="tl-late">⚠ ${x.late}개</span>` : rs.length ? "없음" : "—"}</td>
+            <td>${rs.length ? `${rs.filter((r) => r.ok).length}/${rs.length}` : "—"}</td>
+            <td>${last(rs) ? fmtTime(last(rs)) : "—"}</td></tr>`; }).join("")}</tbody>
+      </table></div>
+      ${studs.filter((s) => tr.some((r) => r.name === s.name)).map((s) => {
+        const rs = tr.filter((r) => r.name === s.name).sort((a, b) => a.idx - b.idx);
+        return `<details class="ad-task tl-adm-student" open><summary><strong>${esc(s.name)}</strong><span class="muted">${TL.sum(rs).done}/${rs.length} 완료</span></summary>
+          <ul class="tl-list">${rs.map((r) => TL.itemHTML(r, { admin: `<span class="tl-adm" data-name="${esc(r.name)}" data-idx="${r.idx}">
+              <label><input type="checkbox" data-tl-ok ${r.ok ? "checked" : ""} /> 확인</label>
+              <input class="admin-input" data-tl-memo value="${esc(r.memo || "")}" maxlength="500" placeholder="메모 (학생 모두에게 보임)" aria-label="${esc(r.title)} 메모" />
+              <button class="pill-btn" type="button" data-tl-memo-save>메모 저장</button></span>` })).join("")}</ul></details>`;
+      }).join("") || `<p class="ad-empty">${esc(window.termLabel(tlAdm.term))}에 올라온 타임라인이 아직 없어요.</p>`}`;
+    main.querySelector("#tlAdmTerm").addEventListener("change", (e) => { tlAdm.term = e.target.value; redraw(); });
+    main.querySelector("#tlAdmReload").addEventListener("click", () => { tlAdm.rows = null; redraw(); });
+    const send = async (wrap, patch, ok) => {
+      const r = tr.find((x) => x.name === wrap.dataset.name && x.idx === Number(wrap.dataset.idx));
+      let res; try { res = await API.call("adm_check", { password: admPw, name: r.name, term: r.term, idx: r.idx, ...patch }); } catch (e) { res = { ok: false }; }
+      if (!res || !res.ok) { window.toast("저장하지 못했어요. 다시 시도해 주세요."); return false; }
+      Object.assign(r, ok); window.toast("저장했어요."); return true;
+    };
+    main.querySelectorAll("[data-tl-ok]").forEach((c) => c.addEventListener("change", async () => {
+      const wrap = c.closest(".tl-adm"); c.disabled = true;
+      if (!(await send(wrap, { ok: c.checked }, { ok: c.checked }))) c.checked = !c.checked;
+      redraw();
+    }));
+    main.querySelectorAll("[data-tl-memo-save]").forEach((b) => b.addEventListener("click", async () => {
+      const wrap = b.closest(".tl-adm"), v = wrap.querySelector("[data-tl-memo]").value.trim(); b.disabled = true;
+      await send(wrap, { memo: v }, { memo: v }); redraw();
+    }));
   }
 
   /* ── 탭: 면담 신청 내역 (입학·지도 문의) ── */

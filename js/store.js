@@ -106,6 +106,34 @@
     }
   };
 
+  /* 구글 시트에서 저장하고 다시 읽어 오기 (학기 타임라인) — Apps Script 2판이 필요
+   * 응답을 읽어야 하므로 no-cors가 아닌 일반 요청(text/plain)으로 보냄 */
+  let apiVersion = null;
+  window.SheetAPI = {
+    ready: () => window.SheetSync.ready(),
+    // Apps Script가 2판(타임라인 지원)인지 확인 — 1판에 타임라인 요청을 보내면 '기타' 시트에 빈 줄이 쌓이므로 먼저 확인
+    version() {
+      const s = (window.SITE_CONFIG || {}).sheets || {};
+      return apiVersion || (apiVersion = fetch(s.endpoint, { cache: "no-store" }).then((r) => r.json()).then((j) => Number(j.version) || 1).catch(() => 0));
+    },
+    async call(action, payload) {
+      const v = await this.version();
+      if (v < 2) return { ok: false, error: "old", message: v === 0 ? "구글 시트에 연결하지 못했어요. 잠시 후 다시 시도해 주세요." : "구글 시트 연결 스크립트를 새 버전으로 바꿔야 쓸 수 있어요. (교수님께 알려 주세요)" };
+      const s = (window.SITE_CONFIG || {}).sheets || {};
+      const r = await fetch(s.endpoint, {
+        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action, key: s.key || "", ...payload })
+      });
+      return r.json();
+    }
+  };
+  // 학기 이름: 3~8월 = 1학기, 9~12월 = 2학기, 1~2월 = 지난해 2학기 (예: "2026-2")
+  window.currentTerm = (d = new Date()) => {
+    const y = d.getFullYear(), m = d.getMonth() + 1;
+    return m >= 3 && m <= 8 ? `${y}-1` : m >= 9 ? `${y}-2` : `${y - 1}-2`;
+  };
+  window.termLabel = (t) => { const [y, n] = String(t).split("-"); return `${y}년 ${n}학기`; };
+
   /* 서버 데이터베이스(PostgreSQL)로 기록 보내기 — Railway에서 server.js로 실행할 때만 동작
    * 정적 미리보기(서버 없음)에서는 ready()가 false라 지금처럼 이 브라우저에만 저장돼요. */
   const TOKEN = "home:dbToken";

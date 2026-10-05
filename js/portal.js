@@ -13,6 +13,40 @@
   const fmt = (d) => `${d.getMonth() + 1}월 ${d.getDate()}일 (${DAYS[d.getDay()]})`;
   const fmtTime = (iso) => { const d = new Date(iso); return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
   const codeHash = (code) => window.sha256("advisee:" + String(code).trim().toUpperCase());
+  const tlCode = {
+    get: () => { try { return sessionStorage.getItem("home:adviseeCode") || ""; } catch (e) { return ""; } },
+    set: (v) => { try { v ? sessionStorage.setItem("home:adviseeCode", v) : sessionStorage.removeItem("home:adviseeCode"); } catch (e) {} }
+  };
+
+  /* ── 학기 타임라인 공용 도우미 (관리자 화면에서도 씀) ── */
+  const TL = window.TL = {
+    // 목표일까지 남은 날: "D-5" / "오늘" / "3일 지남"
+    dday(due, done) {
+      if (!isDate(due)) return "";
+      const t = new Date(); t.setHours(0, 0, 0, 0);
+      const n = Math.round((parse(due) - t) / 86400000);
+      if (done) return "";
+      return n > 0 ? `D-${n}` : n === 0 ? "오늘" : `${-n}일 지남`;
+    },
+    late: (r) => !r.done && isDate(r.due) && parse(r.due) < new Date(new Date().setHours(0, 0, 0, 0)),
+    // 한 학생·학기 요약
+    sum(rows) { const total = rows.length, done = rows.filter((r) => r.done).length, late = rows.filter(TL.late).length;
+      return { total, done, late, pct: total ? Math.round((done / total) * 100) : 0 }; },
+    terms(rows) { return [...new Set([window.currentTerm(), ...rows.map((r) => r.term)])].filter(Boolean).sort().reverse(); },
+    itemHTML(r, opts = {}) {
+      const dd = TL.dday(r.due, r.done);
+      return `<li class="tl-item ${r.done ? "is-done" : ""} ${TL.late(r) ? "is-late" : ""}">
+        ${opts.check ? `<label class="tl-item__check"><input type="checkbox" data-tl-done="${r.idx}" ${r.done ? "checked" : ""} aria-label="${esc(r.title)} 완료" /></label>`
+          : `<span class="tl-item__mark" aria-hidden="true">${r.done ? "✓" : ""}</span>`}
+        <span class="tl-item__body"><b>${esc(r.title)}</b>
+          <small>${r.due ? `목표 ${esc(r.due)}` : "목표일 없음"}${r.done && r.doneAt ? ` · ${esc(r.doneAt)} 완료` : ""}${dd ? ` · <em>${esc(dd)}</em>` : ""}</small>
+          ${r.memo ? `<span class="tl-item__memo">💬 ${esc(r.memo)}</span>` : ""}</span>
+        ${r.ok ? `<span class="chip chip--week tl-item__ok">교수님 확인</span>` : ""}
+        ${opts.admin || ""}
+      </li>`;
+    },
+    barHTML(s) { return `<div class="stage-bar tl-bar" role="progressbar" aria-valuenow="${s.pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${s.pct}%"></i></div>`; }
+  };
 
   /* 랩 일정 → 날짜별 목록 (매주 반복 일정 펼치기) */
   window.labOccurrences = function (events, who) {
@@ -67,6 +101,7 @@
         const h = codeHash(code);
         if (h !== st.codeHash) { err.textContent = "개인 코드가 맞지 않아요."; return; }
         S.set("advisee", { name, h });
+        tlCode.set(code); // 학기 타임라인을 시트에서 읽고 쓸 때 필요 (이 탭에서만 기억)
         window.toast(`${name} 님, 반가워요! 🌿`);
         drawHome();
       });
@@ -104,13 +139,115 @@
           </section>
         </div>
 
+        <section class="panel portal-card portal-report" id="tlBox"></section>
         <section class="panel portal-card portal-report" id="reportBox"></section>
         <section class="panel portal-card portal-report" id="profileBox"></section>`;
 
-      root.querySelector("#ptLogout").addEventListener("click", () => { S.remove("advisee"); window.toast("로그아웃했어요."); drawLogin(); });
+      root.querySelector("#ptLogout").addEventListener("click", () => { S.remove("advisee"); tlCode.set(""); window.toast("로그아웃했어요."); drawLogin(); });
 
+      drawTimeline(st);
       drawReport(st);
       drawProfile(st);
+    };
+
+    /* ── 학기 타임라인: 학기마다 내 계획(할 일 + 목표일)을 올리고 완료를 체크, 연구실 전체 진행도 함께 봄 ── */
+    let tlTerm = null, tlRows = null, tlEdit = false;
+    const drawTimeline = async (st, reload = true) => {
+      const box = root.querySelector("#tlBox"); if (!box) return;
+      const head = `<h3>📅 학기 타임라인 <small>연구실 모두가 서로의 계획과 진행을 볼 수 있어요</small></h3>`;
+      if (!window.SheetAPI.ready()) { box.innerHTML = head + `<p class="muted">구글 시트가 연결되지 않아 지금은 쓸 수 없어요.</p>`; return; }
+      if (!tlCode.get()) {
+        box.innerHTML = head + `<form class="tl-code" novalidate><p class="muted">타임라인을 불러오려면 개인 코드를 한 번 더 입력해 주세요. (이 탭을 닫으면 다시 물어봐요)</p>
+          <div class="ad-row"><input class="admin-input" name="code" type="password" autocomplete="current-password" placeholder="개인 코드" aria-label="개인 코드" />
+          <button class="btn btn--primary" type="submit">불러오기</button></div><p class="field__err" role="alert"></p></form>`;
+        box.querySelector("form").addEventListener("submit", (e) => {
+          e.preventDefault();
+          const c = e.target.elements.code.value.trim();
+          if (codeHash(c) !== st.codeHash) { e.target.querySelector(".field__err").textContent = "개인 코드가 맞지 않아요."; return; }
+          tlCode.set(c); drawTimeline(st);
+        });
+        return;
+      }
+      if (reload || !tlRows) {
+        box.innerHTML = head + `<p class="muted">불러오는 중…</p>`;
+        let res;
+        try { res = await window.SheetAPI.call("tl_all", { name: st.name, code: tlCode.get() }); }
+        catch (e) { res = { ok: false, message: "시트에 연결하지 못했어요. 잠시 후 다시 시도해 주세요." }; }
+        if (!res || !res.ok) {
+          if (res && res.error === "auth") tlCode.set("");
+          box.innerHTML = head + `<p class="notice-inline">${esc((res && (res.message || res.error)) || "불러오지 못했어요.")}</p><button class="pill-btn" type="button" id="tlRetry">다시 시도</button>`;
+          box.querySelector("#tlRetry").addEventListener("click", () => drawTimeline(st));
+          return;
+        }
+        tlRows = res.rows || [];
+      }
+      const terms = TL.terms(tlRows);
+      if (!tlTerm || !terms.includes(tlTerm)) tlTerm = window.currentTerm();
+      const termRows = tlRows.filter((r) => r.term === tlTerm);
+      const mine = termRows.filter((r) => r.name === st.name).sort((a, b) => a.idx - b.idx);
+      const sm = TL.sum(mine);
+      const editing = tlEdit || !mine.length;
+      const editRow = (it = {}) => `<div class="tl-edit-row">
+          <input class="admin-input" name="title" maxlength="120" placeholder="할 일 (예: 문헌 검토 완료, IRB 신청, 본심사 원고 제출)" value="${esc(it.title || "")}" aria-label="할 일" />
+          <input class="admin-input" name="due" type="date" value="${esc(it.due || "")}" aria-label="목표일" />
+          <button class="ad-x" type="button" data-tl-del aria-label="이 줄 지우기">✕</button></div>`;
+      const myHTML = editing ? `
+          <form class="tl-edit" novalidate>
+            <p class="muted">${mine.length ? "고친 뒤 저장하면 이번 학기 계획이 바뀌어요. 이름이 같은 항목은 완료·확인 표시가 그대로 남아요." : `${esc(window.termLabel(tlTerm))}에 할 일과 목표일을 적어 올려 주세요. 학기에 한 번 올리고, 필요하면 고칠 수 있어요.`}</p>
+            <div class="tl-edit-rows">${(mine.length ? mine : [{}, {}, {}]).map(editRow).join("")}</div>
+            <div class="ad-row"><button class="pill-btn" type="button" id="tlAddRow">+ 항목 추가</button></div>
+            <p class="field__err" role="alert"></p>
+            <div class="ad-row"><button class="btn btn--primary" type="submit">타임라인 저장</button>${mine.length ? `<button class="pill-btn" type="button" id="tlCancel">취소</button>` : ""}</div>
+          </form>`
+        : `${TL.barHTML(sm)}<p class="tl-sum">${sm.done} / ${sm.total} 완료${sm.late ? ` · <span class="tl-late">목표일 지난 항목 ${sm.late}개</span>` : ""}</p>
+           <ul class="tl-list">${mine.map((r) => TL.itemHTML(r, { check: true })).join("")}</ul>
+           <div class="ad-row"><button class="pill-btn" type="button" id="tlEditBtn">✏️ 타임라인 고치기</button></div>`;
+      const labHTML = students.map((s) => {
+        const rs = termRows.filter((r) => r.name === s.name).sort((a, b) => a.idx - b.idx), x = TL.sum(rs);
+        return `<details class="tl-member ${s.name === st.name ? "is-me" : ""}">
+          <summary><span class="tl-member__name">${esc(s.name)}${s.name === st.name ? " <small>(나)</small>" : ""}<small>${esc([s.program, s.major].filter(Boolean).join(" · "))}</small></span>
+            ${rs.length ? `${TL.barHTML(x)}<span class="tl-member__num">${x.done}/${x.total}${x.late ? ` <span class="tl-late">⚠ ${x.late}</span>` : ""}</span>` : `<span class="muted tl-member__none">아직 올리지 않음</span>`}</summary>
+          ${rs.length ? `<ul class="tl-list">${rs.map((r) => TL.itemHTML(r)).join("")}</ul>` : ""}
+        </details>`;
+      }).join("");
+      box.innerHTML = head + `
+        <div class="tl-term"><label for="tlTermSel">학기</label>
+          <select class="ad-select" id="tlTermSel">${terms.map((t) => `<option value="${esc(t)}" ${t === tlTerm ? "selected" : ""}>${esc(window.termLabel(t))}</option>`).join("")}</select>
+          <button class="pill-btn" type="button" id="tlReload">새로고침</button></div>
+        <div class="tl-mine"><h4>내 타임라인</h4>${myHTML}</div>
+        <div class="tl-lab"><h4>연구실 전체 <small>${esc(window.termLabel(tlTerm))}</small></h4>${labHTML}</div>`;
+
+      box.querySelector("#tlTermSel").addEventListener("change", (e) => { tlTerm = e.target.value; tlEdit = false; drawTimeline(st, false); });
+      box.querySelector("#tlReload").addEventListener("click", () => drawTimeline(st));
+      const eb = box.querySelector("#tlEditBtn"); if (eb) eb.addEventListener("click", () => { tlEdit = true; drawTimeline(st, false); });
+      const cb = box.querySelector("#tlCancel"); if (cb) cb.addEventListener("click", () => { tlEdit = false; drawTimeline(st, false); });
+      const form = box.querySelector(".tl-edit");
+      if (form) {
+        const rowsBox = form.querySelector(".tl-edit-rows");
+        form.querySelector("#tlAddRow").addEventListener("click", () => {
+          if (rowsBox.children.length >= 20) { window.toast("항목은 20개까지 넣을 수 있어요."); return; }
+          rowsBox.insertAdjacentHTML("beforeend", editRow()); rowsBox.lastElementChild.querySelector("input").focus();
+        });
+        rowsBox.addEventListener("click", (e) => { const b = e.target.closest("[data-tl-del]"); if (b) b.closest(".tl-edit-row").remove(); });
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const items = [...rowsBox.querySelectorAll(".tl-edit-row")].map((r) => ({ title: r.querySelector("[name=title]").value.trim(), due: r.querySelector("[name=due]").value }))
+            .filter((it) => it.title);
+          const err = form.querySelector(".field__err");
+          if (!items.length) { err.textContent = "할 일을 하나 이상 적어 주세요."; return; }
+          if (new Set(items.map((i) => i.title)).size !== items.length) { err.textContent = "같은 이름의 항목이 있어요. 조금씩 다르게 적어 주세요."; return; }
+          const btn = form.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = "저장하는 중…";
+          let res; try { res = await window.SheetAPI.call("tl_save", { name: st.name, code: tlCode.get(), term: tlTerm, items }); } catch (x) { res = { ok: false }; }
+          if (!res || !res.ok) { btn.disabled = false; btn.textContent = "타임라인 저장"; err.textContent = (res && res.message) || "저장하지 못했어요. 잠시 후 다시 시도해 주세요."; return; }
+          window.toast("타임라인을 저장했어요. 📅"); tlEdit = false; drawTimeline(st);
+        });
+      }
+      box.querySelectorAll("[data-tl-done]").forEach((c) => c.addEventListener("change", async () => {
+        const r = mine.find((x) => x.idx === Number(c.dataset.tlDone)); c.disabled = true;
+        let res; try { res = await window.SheetAPI.call("tl_done", { name: st.name, code: tlCode.get(), term: tlTerm, idx: r.idx, done: c.checked }); } catch (x) { res = { ok: false }; }
+        if (!res || !res.ok) { c.checked = !c.checked; c.disabled = false; window.toast("저장하지 못했어요. 다시 시도해 주세요."); return; }
+        r.done = c.checked; r.doneAt = c.checked ? key(new Date()) : ""; drawTimeline(st, false);
+      }));
     };
 
     /* ── 내 프로필 수정 요청 (교수님이 확인한 뒤 홈페이지에 반영) ── */

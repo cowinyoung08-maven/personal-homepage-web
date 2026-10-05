@@ -678,3 +678,50 @@ body.is-admin .connect .admin-edit { display: inline-flex; margin: 16px 0 0; }
 @media (max-width: 560px) { .pub-older { padding: 18px; } .pub-older__btns { width: 100%; } }
 /* 연구 주제 칸 수가 줄의 배수가 아닐 때 마지막 칸 오른쪽 선이 빈칸으로 이어지지 않게 */
 .svc__item:last-child { border-right: 0 !important; }
+
+/* 학생 전용 공간·관리자: 학기 타임라인 */
+#tlBox { margin-top: 18px; }
+.tl-term { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 14px; font-weight: 700; }
+.tl-mine, .tl-lab { margin-top: 18px; }
+.tl-mine h4, .tl-lab h4 { margin: 0 0 10px; font-size: 15px; font-weight: 800; }
+.tl-lab h4 small { margin-left: 6px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.tl-bar { height: 8px; margin: 4px 0 6px; }
+.tl-sum { margin: 0 0 10px; font-size: 13.5px; font-weight: 700; color: var(--lilac-600); }
+.tl-late { color: #a33a1d; font-weight: 800; }
+.tl-list { margin: 0 0 12px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.tl-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--pink-50); }
+.tl-item.is-done { background: var(--lilac-100); }
+.tl-item.is-done .tl-item__body b { text-decoration: line-through; text-decoration-color: rgba(85, 101, 74, .5); }
+.tl-item.is-late { box-shadow: inset 3px 0 0 #b8724f; }
+.tl-item__check input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--lilac-600); cursor: pointer; }
+.tl-item__mark { flex: none; display: grid; place-items: center; width: 20px; height: 20px; margin-top: 2px; border-radius: 50%; border: 1.5px solid var(--lilac-400); color: var(--lilac-600); font-size: 12px; font-weight: 800; }
+.tl-item__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 14.5px; }
+.tl-item__body small { font-size: 12.5px; color: var(--muted); }
+.tl-item__body em { font-style: normal; font-weight: 800; color: var(--pink-500); }
+.tl-item__memo { font-size: 13px; color: var(--text); }
+.tl-item__ok { flex: none; }
+.tl-member { border-top: 1px solid var(--line); }
+.tl-member > summary { display: grid; grid-template-columns: minmax(120px, 1.2fr) 2fr auto; align-items: center; gap: 12px; padding: 12px 4px; cursor: pointer; list-style: none; }
+.tl-member > summary::-webkit-details-marker { display: none; }
+.tl-member__name { display: flex; flex-direction: column; font-weight: 800; line-height: 1.35; }
+.tl-member__name small { font-size: 12px; font-weight: 600; color: var(--muted); }
+.tl-member.is-me .tl-member__name { color: var(--lilac-600); }
+.tl-member__num { font-size: 13px; font-weight: 800; white-space: nowrap; }
+.tl-member__none { grid-column: 2 / 4; font-size: 13px; }
+.tl-member > .tl-list { padding: 0 4px 12px; }
+.tl-edit-rows { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.tl-edit-row { display: grid; grid-template-columns: 1fr 160px auto; gap: 8px; align-items: center; }
+.tl-edit-row .admin-input { margin: 0; }
+.tl-edit .field__err, .tl-code .field__err { margin: 4px 0; }
+.tl-code .ad-row { display: flex; gap: 8px; margin-top: 8px; }
+.tl-code .admin-input { margin: 0; max-width: 220px; }
+.tl-adm { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-left: auto; font-size: 13px; }
+.tl-adm .admin-input { width: 220px; margin: 0; padding: 6px 10px; font-size: 13px; }
+.tl-adm-student .tl-item { flex-wrap: wrap; }
+@media (max-width: 560px) {
+  .tl-edit-row { grid-template-columns: 1fr auto; }
+  .tl-edit-row [name=due] { grid-column: 1 / 2; }
+  .tl-member > summary { grid-template-columns: 1fr auto; }
+  .tl-member > summary .tl-bar { grid-column: 1 / -1; order: 3; }
+  .tl-adm .admin-input { width: 100%; }
+}
