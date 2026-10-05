@@ -132,6 +132,8 @@ window.SITE_CONFIG = {
     description: "Google Scholar 프로필을 바탕으로 연도별로 정리했어요. 종류별로 걸러 보거나 검색할 수 있어요.",
     types: ["국내 학술지", "해외 학술지", "저서 · 북챕터", "학술대회", "보고서 · 기타"],
     scholarUrl: "https://scholar.google.com/citations?user=NSBfSHIAAAAJ&hl=ko",
+    // 기본 화면에 보일 최근 연구의 시작 연도 — 그 이전은 'Google Scholar에서 전체 보기'로 안내 (0이면 전부 보임)
+    recentFrom: 2021,
     items: [
       { year: 2026, type: "해외 학술지", authors: "S Ha, Y. Min", title: "Friend or foe? How digital artists navigate the generative AI disruption: Creative labor, appraisals, emotions, and coping", venue: "Convergence", detail: "", cites: 0, doi: "", kci: "", url: "", scholar: "https://scholar.google.com/citations?view_op=view_citation&user=NSBfSHIAAAAJ&citation_for_view=NSBfSHIAAAAJ:u9iWguZQMMsC" },
       { year: 2026, type: "국내 학술지", authors: "박재영 · 이해수 · 민영", title: "경쟁적 온라인 게임에서 서포터로 살아남기: 젠더화된 역할 수행에 대한 현상학적 분석", venue: "한국언론정보학보", detail: "135, 40-70", cites: 0, doi: "", kci: "", url: "", scholar: "https://scholar.google.com/citations?view_op=view_citation&user=NSBfSHIAAAAJ&citation_for_view=NSBfSHIAAAAJ:1sJd4Hv_s6UC" },

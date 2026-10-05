@@ -665,3 +665,14 @@ body.is-admin .connect .admin-edit { display: inline-flex; margin: 16px 0 0; }
 .profile-last { margin-top: 12px; }
 #profileBox { margin-top: 18px; }
 .portal-grid--one { grid-template-columns: 1fr; }
+
+/* 논문·저서: 최근 연구만 보이고 나머지는 Google Scholar로 안내 */
+.pub-year__spacer { flex: 1; }
+.pub-older {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;
+  margin-top: 24px; padding: 22px 26px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line);
+}
+.pub-older p { margin: 0; font-size: 15px; color: var(--muted); }
+.pub-older__btns { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.pub-older .text-link { min-height: 44px; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+@media (max-width: 560px) { .pub-older { padding: 18px; } .pub-older__btns { width: 100%; } }

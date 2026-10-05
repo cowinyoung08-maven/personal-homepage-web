@@ -166,7 +166,6 @@
         </div>
         <p class="pub-count" id="pubCount" aria-live="polite"></p>
         <div class="pubs" id="pubList"></div>
-        ${P.scholarUrl ? `<p class="pub-more"><a class="btn btn--ghost" href="${esc(P.scholarUrl)}" target="_blank" rel="noopener">Google Scholar에서 전체 보기 ↗</a></p>` : ""}
       </div>
     </section>`;
 
@@ -321,17 +320,47 @@
       <button class="ad-chip" data-type="${esc(t)}" aria-pressed="${t === type}">${esc(t)}
         <small>${t === "전체" ? items.length : items.filter((x) => x.type === t).length}</small></button>`).join("");
 
+    // 기본 화면은 최근 연구만 (config의 publications.recentFrom 이후), 그 이전은 Google Scholar로 안내
+    // 검색할 때는 전체에서 찾고, 인용순은 상위 TOP_CITED편만 보여 줌. '여기서 모두 보기'를 누르면 전부 펼침
+    const recentFrom = Number(P.recentFrom) || 0, TOP_CITED = 15;
+    let showAll = false;
     const draw = () => {
       const qq = q.trim().toLowerCase();
-      const shown = items
+      const matched = items
         .filter((x) => type === "전체" || x.type === type)
         .filter((x) => !qq || [x.title, x.authors, x.venue, x.year, x.detail].join(" ").toLowerCase().includes(qq))
         .sort((a, b) => sort === "cites"
           ? (Number(b.cites) || 0) - (Number(a.cites) || 0) || (Number(b.year) || 0) - (Number(a.year) || 0)
           : (Number(b.year) || 0) - (Number(a.year) || 0) || a.i - b.i);
-      $("#pubCount").textContent = items.length ? `${shown.length}편` : "";
+      const limited = !qq && !showAll;
+      const shown = !limited ? matched
+        : sort === "cites" ? matched.slice(0, TOP_CITED)
+        : recentFrom ? matched.filter((x) => Number(x.year) >= recentFrom) : matched;
+      const hidden = matched.length - shown.length;
+      $("#pubCount").textContent = !items.length ? ""
+        : qq ? `검색 결과 ${matched.length}편`
+        : hidden ? `전체 ${matched.length}편 중 ${sort === "cites" ? `인용 상위 ${shown.length}편` : `${recentFrom}년 이후 ${shown.length}편`}`
+        : `${matched.length}편`;
+      // 목록 아래 안내: 숨긴 연구 + Google Scholar + 여기서 모두 보기
+      const more = () => {
+        const box = document.createElement("div");
+        box.className = "pub-older";
+        box.innerHTML = hidden
+          ? `<p>${sort === "cites" ? `인용 상위 ${TOP_CITED}편만 보여 드려요.` : `${recentFrom}년 이전 연구 ${hidden}편은 Google Scholar에서 볼 수 있어요.`}</p>
+             <div class="pub-older__btns">
+               ${P.scholarUrl ? `<a class="btn btn--primary" href="${esc(P.scholarUrl)}" target="_blank" rel="noopener">Google Scholar에서 전체 보기 ↗</a>` : ""}
+               <button class="text-link" type="button" id="pubShowAll">여기서 모두 보기 <span class="arr" aria-hidden="true">↓</span></button>
+             </div>`
+          : `${showAll && !qq ? `<button class="text-link" type="button" id="pubShowRecent">최근 연구만 보기 <span class="arr" aria-hidden="true">↑</span></button>` : ""}
+             ${P.scholarUrl ? `<a class="btn btn--ghost" href="${esc(P.scholarUrl)}" target="_blank" rel="noopener">Google Scholar 프로필 ↗</a>` : ""}`;
+        $("#pubList").appendChild(box);
+        const all = box.querySelector("#pubShowAll"), recent = box.querySelector("#pubShowRecent");
+        if (all) all.addEventListener("click", () => { showAll = true; draw(); });
+        if (recent) recent.addEventListener("click", () => { showAll = false; draw(); $("#publications").scrollIntoView({ behavior: "smooth" }); });
+      };
       if (!shown.length) {
         $("#pubList").innerHTML = `<p class="ad-empty">${items.length ? "조건에 맞는 항목이 없어요." : "아직 등록된 논문·저서가 없어요."}</p>`;
+        if (hidden) more();
         return;
       }
       const pubHTML = (x) => `
@@ -346,6 +375,7 @@
             </li>`;
       if (sort === "cites") { // 인용순: 연도 구분 없이 한 목록
         $("#pubList").innerHTML = `<div class="pub-year pub-year--flat"><h3>인용순</h3><ul>${shown.map(pubHTML).join("")}</ul></div>`;
+        more();
         return;
       }
       // 연도별로 접기: 가장 최근 연도만 펼치고 나머지는 접어 둠 (검색 중에는 찾은 연도를 모두 펼침)
@@ -356,10 +386,11 @@
           const rows = shown.filter((x) => x.year === y);
           return `
           <details class="pub-year pub-year--fold" ${i === 0 || qq ? "open" : ""}>
-            <summary><h3>${esc(y || "연도 미상")}</h3><span class="pub-year__count">${rows.length}편</span><i class="week__arrow" aria-hidden="true"></i></summary>
+            <summary><h3>${esc(y || "연도 미상")}</h3><span class="pub-year__spacer"></span><i class="week__arrow" aria-hidden="true"></i></summary>
             <ul>${rows.map(pubHTML).join("")}</ul>
           </details>`;
         }).join("")}`;
+      more();
       const folds = [...$("#pubList").querySelectorAll(".pub-year--fold")];
       const btn = $("#pubToggleAll");
       const sync = () => (btn.textContent = folds.every((d) => d.open) ? "모든 연도 접기" : "모든 연도 펼치기");
